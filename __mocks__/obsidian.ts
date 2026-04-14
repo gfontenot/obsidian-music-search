@@ -14,6 +14,19 @@ export class App {
   vault: Vault = new Vault();
 }
 
+export abstract class AbstractInputSuggest<T> {
+  protected inputEl: HTMLInputElement;
+  constructor(_app: App, inputEl: HTMLInputElement) {
+    this.inputEl = inputEl;
+  }
+  setValue(_value: string) {}
+  getValue(): string { return this.inputEl.value; }
+  close() {}
+  abstract getSuggestions(query: string): T[] | Promise<T[]>;
+  abstract renderSuggestion(value: T, el: HTMLElement): void;
+  abstract selectSuggestion(value: T, evt?: MouseEvent | KeyboardEvent): void;
+}
+
 export class TFile {
   path: string;
   constructor(path: string) {

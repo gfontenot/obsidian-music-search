@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { AbstractInputSuggest, App, PluginSettingTab, Setting, TFile, TFolder } from 'obsidian';
 import type MusicSearchPlugin from '../main';
 
 export interface MusicSearchSettings {
@@ -42,6 +42,52 @@ link-wikipedia: {{wikipediaUrl}}
 {{trackList}}
 `;
 
+class FolderSuggest extends AbstractInputSuggest<TFolder> {
+  private onSelect: (value: string) => void;
+
+  constructor(app: App, inputEl: HTMLInputElement, onSelect: (value: string) => void) {
+    super(app, inputEl);
+    this.onSelect = onSelect;
+  }
+
+  getSuggestions(query: string): TFolder[] {
+    return this.app.vault.getAllFolders(false)
+      .filter(f => f.path.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 50);
+  }
+  renderSuggestion(folder: TFolder, el: HTMLElement) {
+    el.setText(folder.path);
+  }
+  selectSuggestion(folder: TFolder) {
+    this.setValue(folder.path);
+    this.onSelect(folder.path);
+    this.close();
+  }
+}
+
+class FileSuggest extends AbstractInputSuggest<TFile> {
+  private onSelect: (value: string) => void;
+
+  constructor(app: App, inputEl: HTMLInputElement, onSelect: (value: string) => void) {
+    super(app, inputEl);
+    this.onSelect = onSelect;
+  }
+
+  getSuggestions(query: string): TFile[] {
+    return this.app.vault.getMarkdownFiles()
+      .filter(f => f.path.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 50);
+  }
+  renderSuggestion(file: TFile, el: HTMLElement) {
+    el.setText(file.path);
+  }
+  selectSuggestion(file: TFile) {
+    this.setValue(file.path);
+    this.onSelect(file.path);
+    this.close();
+  }
+}
+
 export class MusicSearchSettingTab extends PluginSettingTab {
   plugin: MusicSearchPlugin;
 
@@ -60,13 +106,19 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('Note destination folder')
       .setDesc('Where to save new music notes. Leave empty for vault root.')
-      .addText(text => text
-        .setPlaceholder('e.g. Music/Releases')
-        .setValue(this.plugin.settings.folder)
-        .onChange(async (value) => {
+      .addText(text => {
+        new FolderSuggest(this.app, text.inputEl, async (value) => {
           this.plugin.settings.folder = value.trim();
           await this.plugin.saveSettings();
-        }));
+        });
+        text
+          .setPlaceholder('e.g. Music/Releases')
+          .setValue(this.plugin.settings.folder)
+          .onChange(async (value) => {
+            this.plugin.settings.folder = value.trim();
+            await this.plugin.saveSettings();
+          });
+      });
 
     // File name template
     new Setting(containerEl)
@@ -96,13 +148,19 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('Template file')
       .setDesc('Path to a template note in your vault. If set, this file will be used as the note template. Leave empty to use the built-in default template.')
-      .addText(text => text
-        .setPlaceholder('e.g. Templates/Music Release Template.md')
-        .setValue(this.plugin.settings.templateFile)
-        .onChange(async (value) => {
+      .addText(text => {
+        new FileSuggest(this.app, text.inputEl, async (value) => {
           this.plugin.settings.templateFile = value.trim();
           await this.plugin.saveSettings();
-        }));
+        });
+        text
+          .setPlaceholder('e.g. Templates/Music Release Template.md')
+          .setValue(this.plugin.settings.templateFile)
+          .onChange(async (value) => {
+            this.plugin.settings.templateFile = value.trim();
+            await this.plugin.saveSettings();
+          });
+      });
 
     // Open new note
     new Setting(containerEl)
