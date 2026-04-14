@@ -38,7 +38,8 @@ describe('replaceVariables', () => {
     const release = makeRelease();
     const template = '{{mbid}} {{year}} {{date}} {{country}} {{label}} {{catalogNumber}} {{format}} {{trackCount}} {{releaseType}} {{status}} {{barcode}} {{mbUrl}}';
     const result = replaceVariables(template, release);
-    expect(result).toBe('rg-abc123 1997 1997-05-21 GB Parlophone NODATA 01 CD 12 Album Official 724384553920 https://musicbrainz.org/release-group/rg-abc123');
+    // year and barcode are numeric strings → quoted; mbUrl contains ':' → quoted
+    expect(result).toBe('rg-abc123 "1997" 1997-05-21 GB Parlophone NODATA 01 CD 12 Album Official "724384553920" "https://musicbrainz.org/release-group/rg-abc123"');
   });
 
   it('replaces unknown variables with empty string', () => {
@@ -58,7 +59,8 @@ describe('replaceVariables', () => {
 
   it('formats genresInline as comma-separated string', () => {
     const result = replaceVariables('{{genresInline}}', makeRelease());
-    expect(result).toBe('alternative rock, art rock');
+    // commas trigger quoting
+    expect(result).toBe('"alternative rock, art rock"');
   });
 
   it('formats tracklist', () => {
@@ -98,6 +100,65 @@ describe('replaceVariables', () => {
   it('defaults to empty tags when third argument is omitted', () => {
     const result = replaceVariables('{{tags}}', makeRelease());
     expect(result).toBe('[]');
+  });
+
+  describe('YAML scalar escaping', () => {
+    it('quotes values containing a colon', () => {
+      const r = makeRelease({ title: '99 Songs of Revolution: Volume 1' });
+      expect(replaceVariables('{{title}}', r)).toBe('"99 Songs of Revolution: Volume 1"');
+    });
+
+    it('does not quote safe values', () => {
+      const r = makeRelease({ title: 'OK Computer' });
+      expect(replaceVariables('{{title}}', r)).toBe('OK Computer');
+    });
+
+    it('quotes values containing a hash', () => {
+      const r = makeRelease({ title: 'Album #1' });
+      expect(replaceVariables('{{title}}', r)).toBe('"Album #1"');
+    });
+
+    it('escapes internal double-quotes when quoting', () => {
+      const r = makeRelease({ title: 'Say "Hello"' });
+      expect(replaceVariables('{{title}}', r)).toBe('"Say \\"Hello\\""');
+    });
+
+    it('quotes URLs (contain colon)', () => {
+      const r = makeRelease({ coverUrl: 'https://example.com/cover.jpg' });
+      expect(replaceVariables('{{coverUrl}}', r)).toBe('"https://example.com/cover.jpg"');
+    });
+
+    it('returns empty string for empty values without quoting', () => {
+      const r = makeRelease({ disambiguation: '' });
+      expect(replaceVariables('{{disambiguation}}', r)).toBe('');
+    });
+
+    it('quotes a plain year so YAML treats it as a string, not an integer', () => {
+      const r = makeRelease({ year: '1997' });
+      expect(replaceVariables('{{year}}', r)).toBe('"1997"');
+    });
+
+    it('quotes a plain year without needing manual quotes in the template', () => {
+      const r = makeRelease({ year: '1997' });
+      expect(replaceVariables('release-year: {{year}}', r)).toBe('release-year: "1997"');
+    });
+
+    it('quotes other numeric-looking strings (e.g. barcode)', () => {
+      const r = makeRelease({ barcode: '724384553920' });
+      expect(replaceVariables('{{barcode}}', r)).toBe('"724384553920"');
+    });
+
+    it('does not quote trackCount so YAML parses it as a number', () => {
+      const r = makeRelease({ trackCount: 12 });
+      expect(replaceVariables('{{trackCount}}', r)).toBe('12');
+    });
+
+    it('does not quote YAML block variables (genres, tags)', () => {
+      const r = makeRelease({ genres: ['rock: hard', 'pop: soft'] });
+      const result = replaceVariables('{{genres}}', r);
+      expect(result).toMatch(/^  - rock: hard/m);
+      expect(result).not.toMatch(/^"/);
+    });
   });
 
   it('handles disambiguation field', () => {

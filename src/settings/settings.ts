@@ -26,7 +26,7 @@ artist-mbid: {{artistMbid}}
 title: {{title}}
 disambiguation: {{disambiguation}}
 release-date: {{date}}
-release-year: "{{year}}"
+release-year: {{year}}
 album-type: {{releaseType}}
 track-count: {{trackCount}}
 genres:{{genres}}

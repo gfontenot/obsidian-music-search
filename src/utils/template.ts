@@ -1,6 +1,21 @@
 import { App, TFile } from 'obsidian';
 import { Release } from '../models/release.model';
 
+// Wraps a scalar value in double-quotes if it contains characters that would
+// break YAML parsing (colons, hashes, brackets, etc.). Safe values are
+// returned as-is. Internal backslashes and double-quotes are escaped.
+function toYamlScalar(value: string): string {
+  if (!value) return value;
+  const needsQuoting =
+    /[:#\[\]{},|>!%@`&*'"\n\r]/.test(value) ||
+    /^[-?~\s]/.test(value) ||
+    /\s$/.test(value) ||
+    /^(true|false|yes|no|on|off|null)$/i.test(value) ||
+    /^\d+(\.\d+)?$/.test(value);
+  if (!needsQuoting) return value;
+  return '"' + value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '') + '"';
+}
+
 export function replaceVariables(template: string, release: Release, userTags: string[] = []): string {
 
   // Build tracklist string
@@ -20,28 +35,30 @@ export function replaceVariables(template: string, release: Release, userTags: s
   const genresInline = release.genres.join(', ');
 
   const vars: Record<string, string> = {
+    // YAML block values — not escaped, must be used as-is in the template
     tags: tagsYaml,
-    title: release.title,
-    artist: release.artist,
-    artistMbid: release.artistMbid,
-    date: release.date,
-    year: release.year,
-    country: release.country,
-    label: release.label,
-    catalogNumber: release.catalogNumber,
-    format: release.format,
-    trackCount: String(release.trackCount),
-    trackList,
     genres: genresYaml,
-    genresInline,
-    coverUrl: release.coverUrl,
-    mbid: release.mbid,
-    mbUrl: release.mbUrl,
-    releaseGroupMbid: release.releaseGroupMbid,
-    releaseType: release.releaseType,
-    status: release.status,
-    barcode: release.barcode,
-    disambiguation: release.disambiguation,
+    trackList,
+    trackCount: String(release.trackCount),
+    // Scalar values — escaped so they're safe in YAML frontmatter
+    title: toYamlScalar(release.title),
+    artist: toYamlScalar(release.artist),
+    artistMbid: toYamlScalar(release.artistMbid),
+    date: toYamlScalar(release.date),
+    year: toYamlScalar(release.year),
+    country: toYamlScalar(release.country),
+    label: toYamlScalar(release.label),
+    catalogNumber: toYamlScalar(release.catalogNumber),
+    format: toYamlScalar(release.format),
+    genresInline: toYamlScalar(genresInline),
+    coverUrl: toYamlScalar(release.coverUrl),
+    mbid: toYamlScalar(release.mbid),
+    mbUrl: toYamlScalar(release.mbUrl),
+    releaseGroupMbid: toYamlScalar(release.releaseGroupMbid),
+    releaseType: toYamlScalar(release.releaseType),
+    status: toYamlScalar(release.status),
+    barcode: toYamlScalar(release.barcode),
+    disambiguation: toYamlScalar(release.disambiguation),
   };
 
   // Handle standard variables
