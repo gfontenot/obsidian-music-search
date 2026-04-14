@@ -85,22 +85,6 @@ describe('replaceVariables', () => {
     expect(result).toBe('');
   });
 
-  it('substitutes {{DATE}} with today\'s ISO date', () => {
-    const result = replaceVariables('{{DATE}}', makeRelease());
-    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(result).toBe(new Date().toISOString().split('T')[0]);
-  });
-
-  it('formats {{DATE:YYYYMMDD}}', () => {
-    const result = replaceVariables('{{DATE:YYYYMMDD}}', makeRelease());
-    expect(result).toMatch(/^\d{8}$/);
-  });
-
-  it('formats {{DATE:DD/MM/YYYY}}', () => {
-    const result = replaceVariables('{{DATE:DD/MM/YYYY}}', makeRelease());
-    expect(result).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
-  });
-
   it('renders user tags as YAML list', () => {
     const result = replaceVariables('{{tags}}', makeRelease(), ['music', 'albums']);
     expect(result).toBe('\n  - music\n  - albums');

@@ -2,8 +2,6 @@ import { App, TFile } from 'obsidian';
 import { Release } from '../models/release.model';
 
 export function replaceVariables(template: string, release: Release, userTags: string[] = []): string {
-  const now = new Date();
-  const dateStr = now.toISOString().split('T')[0];
 
   // Build tracklist string
   const trackList = release.tracks.length > 0
@@ -44,16 +42,10 @@ export function replaceVariables(template: string, release: Release, userTags: s
     status: release.status,
     barcode: release.barcode,
     disambiguation: release.disambiguation,
-    DATE: dateStr,
   };
 
-  // Handle {{DATE:FORMAT}} patterns
-  let result = template.replace(/\{\{DATE:([^}]+)\}\}/g, (_match, fmt) => {
-    return formatDate(now, fmt);
-  });
-
   // Handle standard variables
-  result = result.replace(/\{\{([^}]+)\}\}/g, (_match, key) => {
+  let result = template.replace(/\{\{([^}]+)\}\}/g, (_match, key) => {
     const trimmed = key.trim();
     return vars[trimmed] !== undefined ? vars[trimmed] : '';
   });

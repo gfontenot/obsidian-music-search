@@ -69,7 +69,7 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     // File name template
     new Setting(containerEl)
       .setName('Note file name template')
-      .setDesc('Template for the note file name. Available: {{title}}, {{artist}}, {{year}}, {{date}}, {{format}}, {{label}}, {{DATE}}, {{DATE:YYYYMMDD}}')
+      .setDesc('Template for the note file name. Available: {{title}}, {{artist}}, {{year}}, {{date}}, {{format}}, {{label}}')
       .addText(text => text
         .setPlaceholder('{{artist}} - {{title}} ({{year}})')
         .setValue(this.plugin.settings.fileNameTemplate)
@@ -158,8 +158,6 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       ['{{mbUrl}}', 'MusicBrainz release group URL'],
       ['{{releaseType}}', 'Release type (Album, Single, EP, etc.)'],
       ['{{disambiguation}}', 'Disambiguation comment'],
-      ['{{DATE}}', 'Today\'s date (YYYY-MM-DD)'],
-      ['{{DATE:FORMAT}}', 'Today\'s date with custom format'],
     ];
 
     for (const [variable, desc] of variables) {
