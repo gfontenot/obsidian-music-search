@@ -92,6 +92,34 @@ export async function getTemplateContents(app: App, templatePath: string): Promi
   return '';
 }
 
+export function appendCustomFields(
+  template: string,
+  fields: { name: string; value: string }[],
+): string {
+  const active = fields.filter(f => f.name.trim());
+  if (active.length === 0) return template;
+
+  const lines = template.split('\n');
+  let closingIdx = -1;
+  if (lines[0] === '---') {
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i] === '---') { closingIdx = i; break; }
+    }
+  }
+
+  const fieldLines = active.map(f => `${f.name.trim()}: ${f.value}`);
+
+  if (closingIdx === -1) {
+    return template + '\n' + fieldLines.join('\n');
+  }
+
+  return [
+    ...lines.slice(0, closingIdx),
+    ...fieldLines,
+    ...lines.slice(closingIdx),
+  ].join('\n');
+}
+
 export function makeFileName(template: string, release: Release): string {
   const name = replaceVariables(template, release);
   // Sanitize: remove illegal filename characters

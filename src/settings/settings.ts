@@ -4,7 +4,9 @@ import type MusicSearchPlugin from '../main';
 export interface MusicSearchSettings {
   folder: string;
   fileNameTemplate: string;
+  templateMode: 'custom-fields' | 'template-file';
   templateFile: string;
+  customFields: { name: string; value: string }[];
   openNewNote: boolean;
   showCoverInSearch: boolean;
   tags: string;
@@ -13,7 +15,9 @@ export interface MusicSearchSettings {
 export const DEFAULT_SETTINGS: MusicSearchSettings = {
   folder: '',
   fileNameTemplate: '{{artist}} - {{title}}',
+  templateMode: 'custom-fields',
   templateFile: '',
+  customFields: [],
   openNewNote: true,
   showCoverInSearch: true,
   tags: '',
@@ -144,10 +148,43 @@ export class MusicSearchSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }));
 
-    // Template file
-    new Setting(containerEl)
+    // Note template section (tabs: custom fields vs template file)
+    containerEl.createEl('h3', { text: 'Note Template' });
+    containerEl.createEl('p', {
+      text: 'Choose one mode: add custom fields to the default template, or provide a full template file.',
+      cls: 'setting-item-description',
+    });
+
+    const tabRow = containerEl.createDiv();
+    tabRow.style.display = 'flex';
+    tabRow.style.gap = '8px';
+    tabRow.style.marginBottom = '12px';
+    const customFieldsTabBtn = tabRow.createEl('button', { text: 'Custom Fields' });
+    const templateFileTabBtn = tabRow.createEl('button', { text: 'Template File' });
+
+    const customFieldsPane = containerEl.createDiv();
+    const templateFilePane = containerEl.createDiv();
+
+    const activateTab = (mode: 'custom-fields' | 'template-file') => {
+      this.plugin.settings.templateMode = mode;
+      customFieldsTabBtn.classList.toggle('mod-cta', mode === 'custom-fields');
+      templateFileTabBtn.classList.toggle('mod-cta', mode === 'template-file');
+      customFieldsPane.style.display = mode === 'custom-fields' ? '' : 'none';
+      templateFilePane.style.display = mode === 'template-file' ? '' : 'none';
+    };
+
+    customFieldsTabBtn.addEventListener('click', async () => {
+      activateTab('custom-fields');
+      await this.plugin.saveSettings();
+    });
+    templateFileTabBtn.addEventListener('click', async () => {
+      activateTab('template-file');
+      await this.plugin.saveSettings();
+    });
+
+    new Setting(templateFilePane)
       .setName('Template file')
-      .setDesc('Path to a template note in your vault. If set, this file will be used as the note template. Leave empty to use the built-in default template.')
+      .setDesc('Path to a template note in your vault. All available {{variables}} will be substituted.')
       .addText(text => {
         new FileSuggest(this.app, text.inputEl, async (value) => {
           this.plugin.settings.templateFile = value.trim();
@@ -161,6 +198,9 @@ export class MusicSearchSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
       });
+
+    this.renderCustomFields(customFieldsPane);
+    activateTab(this.plugin.settings.templateMode);
 
     // Open new note
     new Setting(containerEl)
@@ -239,10 +279,49 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       tdDesc.setText(desc);
     }
 
-    // Example template
+    // Default template description
     containerEl.createEl('h3', { text: 'Default Template' });
     containerEl.createEl('p', {
-      text: 'When no template file is set, the plugin generates a note with YAML frontmatter containing all available data and the full track list. Create your own template file and point to it above to fully customize the output.',
+      text: 'The default template generates a note with YAML frontmatter containing all available data and the full track list. Use Custom Fields to extend it, or switch to Template File for full control.',
     });
+  }
+
+  private renderCustomFields(container: HTMLElement) {
+    container.empty();
+
+    for (let i = 0; i < this.plugin.settings.customFields.length; i++) {
+      const field = this.plugin.settings.customFields[i];
+      new Setting(container)
+        .addText(name => name
+          .setPlaceholder('field-name')
+          .setValue(field.name)
+          .onChange(async (value) => {
+            this.plugin.settings.customFields[i].name = value;
+            await this.plugin.saveSettings();
+          }))
+        .addText(val => val
+          .setPlaceholder('value (can use {{variables}})')
+          .setValue(field.value)
+          .onChange(async (value) => {
+            this.plugin.settings.customFields[i].value = value;
+            await this.plugin.saveSettings();
+          }))
+        .addButton(btn => btn
+          .setButtonText('Remove')
+          .onClick(async () => {
+            this.plugin.settings.customFields.splice(i, 1);
+            await this.plugin.saveSettings();
+            this.renderCustomFields(container);
+          }));
+    }
+
+    new Setting(container)
+      .addButton(btn => btn
+        .setButtonText('Add custom field')
+        .onClick(async () => {
+          this.plugin.settings.customFields.push({ name: '', value: '' });
+          await this.plugin.saveSettings();
+          this.renderCustomFields(container);
+        }));
   }
 }

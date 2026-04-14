@@ -1,4 +1,4 @@
-import { replaceVariables, makeFileName, getTemplateContents } from '../src/utils/template';
+import { replaceVariables, makeFileName, getTemplateContents, appendCustomFields } from '../src/utils/template';
 import { Release } from '../src/models/release.model';
 import { App, TFile } from 'obsidian';
 
@@ -187,6 +187,60 @@ describe('makeFileName', () => {
 
   it('trims whitespace from the result', () => {
     expect(makeFileName('  {{title}}  ', makeRelease())).toBe('OK Computer');
+  });
+});
+
+describe('appendCustomFields', () => {
+  const frontmatterTemplate = '---\ntitle: {{title}}\n---\n\nBody here.';
+
+  it('returns template unchanged when fields array is empty', () => {
+    expect(appendCustomFields(frontmatterTemplate, [])).toBe(frontmatterTemplate);
+  });
+
+  it('returns template unchanged when all field names are empty', () => {
+    expect(appendCustomFields(frontmatterTemplate, [{ name: '', value: 'x' }])).toBe(frontmatterTemplate);
+  });
+
+  it('inserts field lines before the closing ---', () => {
+    const result = appendCustomFields(frontmatterTemplate, [{ name: 'owned', value: 'false' }]);
+    expect(result).toBe('---\ntitle: {{title}}\nowned: false\n---\n\nBody here.');
+  });
+
+  it('inserts multiple fields in order', () => {
+    const result = appendCustomFields(frontmatterTemplate, [
+      { name: 'owned', value: 'false' },
+      { name: 'rating', value: '5' },
+    ]);
+    expect(result).toBe('---\ntitle: {{title}}\nowned: false\nrating: 5\n---\n\nBody here.');
+  });
+
+  it('skips fields with blank names but includes others', () => {
+    const result = appendCustomFields(frontmatterTemplate, [
+      { name: '', value: 'ignored' },
+      { name: 'owned', value: 'false' },
+    ]);
+    expect(result).toBe('---\ntitle: {{title}}\nowned: false\n---\n\nBody here.');
+  });
+
+  it('trims whitespace from field names', () => {
+    const result = appendCustomFields(frontmatterTemplate, [{ name: '  owned  ', value: 'false' }]);
+    expect(result).toBe('---\ntitle: {{title}}\nowned: false\n---\n\nBody here.');
+  });
+
+  it('preserves body content after frontmatter', () => {
+    const result = appendCustomFields(frontmatterTemplate, [{ name: 'owned', value: 'false' }]);
+    expect(result).toContain('\n\nBody here.');
+  });
+
+  it('appends at end when template has no frontmatter', () => {
+    const noFrontmatter = 'Just some text.';
+    const result = appendCustomFields(noFrontmatter, [{ name: 'owned', value: 'false' }]);
+    expect(result).toBe('Just some text.\nowned: false');
+  });
+
+  it('field values may contain template variables', () => {
+    const result = appendCustomFields(frontmatterTemplate, [{ name: 'release-year', value: '{{year}}' }]);
+    expect(result).toContain('release-year: {{year}}');
   });
 });
 

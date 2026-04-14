@@ -4,7 +4,7 @@ import { MusicSearchModal } from './views/music_search_modal';
 import { ReleaseSuggestModal, LoadingModal } from './views/release_suggest_modal';
 import { searchReleases, getReleaseDetails } from './api/musicbrainz';
 import { Release } from './models/release.model';
-import { replaceVariables, getTemplateContents, makeFileName } from './utils/template';
+import { replaceVariables, getTemplateContents, makeFileName, appendCustomFields } from './utils/template';
 
 export default class MusicSearchPlugin extends Plugin {
   settings: MusicSearchSettings;
@@ -92,14 +92,14 @@ export default class MusicSearchPlugin extends Plugin {
   async createNote(release: Release) {
     // Determine note content
     let templateContent: string;
-    if (this.settings.templateFile) {
+    if (this.settings.templateMode === 'template-file' && this.settings.templateFile) {
       templateContent = await getTemplateContents(this.app, this.settings.templateFile);
       if (!templateContent) {
         new Notice(`Template file not found: ${this.settings.templateFile}. Using default template.`);
-        templateContent = DEFAULT_NOTE_TEMPLATE;
+        templateContent = appendCustomFields(DEFAULT_NOTE_TEMPLATE, this.settings.customFields);
       }
     } else {
-      templateContent = DEFAULT_NOTE_TEMPLATE;
+      templateContent = appendCustomFields(DEFAULT_NOTE_TEMPLATE, this.settings.customFields);
     }
 
     const userTags = this.settings.tags
