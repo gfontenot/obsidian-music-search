@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "minAppVersion": "0.15.0",
   "description": "Search for music releases via MusicBrainz API and create notes for them.",
-  "author": "You",
-  "authorUrl": "",
+  "author": "Gordon Fontenot",
+  "authorUrl": "https://gordonfontenot.com",
   "isDesktopOnly": false
 }
