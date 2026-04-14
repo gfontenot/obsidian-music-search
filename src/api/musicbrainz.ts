@@ -28,11 +28,7 @@ interface MBReleaseStub {
   id: string;
   title: string;
   date?: string;
-  country?: string;
   status?: string;
-  barcode?: string;
-  disambiguation?: string;
-  'label-info'?: MBLabelInfo[];
   media?: MBMedium[];
 }
 
@@ -44,14 +40,6 @@ interface MBArtistCredit {
   };
   name?: string;
   joinphrase?: string;
-}
-
-interface MBLabelInfo {
-  label?: {
-    id: string;
-    name: string;
-  };
-  'catalog-number'?: string;
 }
 
 interface MBMedium {
@@ -112,22 +100,14 @@ export async function getReleaseDetails(releaseGroupMbid: string): Promise<Relea
   const primaryRelease = pickPrimaryRelease(releases);
 
   let tracks: Track[] = [];
-  let label = '';
-  let catalogNumber = '';
-  let format = '';
   let trackCount = 0;
 
   if (primaryRelease) {
-    const releaseUrl = `${MB_API_BASE}/release/${primaryRelease.id}?fmt=json&inc=artist-credits+labels+recordings`;
+    const releaseUrl = `${MB_API_BASE}/release/${primaryRelease.id}?fmt=json&inc=recordings`;
     const releaseData = await mbFetch(releaseUrl) as MBReleaseStub & { media?: MBMedium[] };
     const media = releaseData.media || [];
 
-    format = media.map(m => m.format || 'Unknown').join(' + ');
     trackCount = media.reduce((sum, m) => sum + (m['track-count'] || 0), 0);
-
-    const labelInfo = releaseData['label-info'] || [];
-    label = labelInfo[0]?.label?.name || '';
-    catalogNumber = labelInfo[0]?.['catalog-number'] || '';
 
     let trackNum = 1;
     for (const medium of media) {
@@ -144,14 +124,7 @@ export async function getReleaseDetails(releaseGroupMbid: string): Promise<Relea
   }
 
   const release = await mapMBReleaseGroup(data);
-  return {
-    ...release,
-    tracks,
-    trackCount: trackCount || release.trackCount,
-    label: label || release.label,
-    catalogNumber: catalogNumber || release.catalogNumber,
-    format: format || release.format,
-  };
+  return { ...release, tracks, trackCount: trackCount || release.trackCount };
 }
 
 function pickPrimaryRelease(releases: MBReleaseStub[]): MBReleaseStub | undefined {

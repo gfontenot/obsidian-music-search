@@ -18,24 +18,23 @@ export const DEFAULT_SETTINGS: MusicSearchSettings = {
 };
 
 export const DEFAULT_NOTE_TEMPLATE = `---
-tags:
-  - record-collecting
 artist: {{artist}}
+artist-mbid: {{artistMbid}}
 title: {{title}}
-alternate-titles:
+disambiguation: {{disambiguation}}
+release-date: {{date}}
 release-year: "{{year}}"
 album-type: {{releaseType}}
-format: {{format}}
-label: {{label}}
-catalog: {{catalogNumber}}
-country: {{country}}
+track-count: {{trackCount}}
 genres:{{genres}}
 album-art: {{coverUrl}}
+mbid: {{mbid}}
 link-musicbrainz: {{mbUrl}}
-link-discogs:
-link-wikipedia:
-owned: false
 ---
+
+## Tracklist
+
+{{trackList}}
 `;
 
 export class MusicSearchSettingTab extends PluginSettingTab {
@@ -131,22 +130,17 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       ['{{title}}', 'Album/release title'],
       ['{{artist}}', 'Artist name(s)'],
       ['{{artistMbid}}', 'Artist MusicBrainz ID'],
-      ['{{year}}', 'Release year (e.g. 2024)'],
-      ['{{date}}', 'Full release date (e.g. 2024-03-15)'],
-      ['{{label}}', 'Record label'],
-      ['{{catalogNumber}}', 'Catalog number'],
-      ['{{format}}', 'Release format (CD, Vinyl, etc.)'],
-      ['{{country}}', 'Release country code'],
+      ['{{year}}', 'First release year (e.g. 1997)'],
+      ['{{date}}', 'First release date (e.g. 1997-05-21)'],
       ['{{trackCount}}', 'Number of tracks'],
       ['{{trackList}}', 'Formatted tracklist'],
       ['{{genres}}', 'Genres as YAML list items'],
       ['{{genresInline}}', 'Genres as comma-separated string'],
       ['{{coverUrl}}', 'Cover art URL'],
-      ['{{mbid}}', 'MusicBrainz release ID'],
-      ['{{mbUrl}}', 'MusicBrainz release URL'],
-      ['{{releaseType}}', 'Release type (Album, Single, etc.)'],
-      ['{{status}}', 'Release status (Official, Bootleg, etc.)'],
-      ['{{barcode}}', 'Barcode'],
+      ['{{mbid}}', 'MusicBrainz release group ID'],
+      ['{{releaseGroupMbid}}', 'MusicBrainz release group ID'],
+      ['{{mbUrl}}', 'MusicBrainz release group URL'],
+      ['{{releaseType}}', 'Release type (Album, Single, EP, etc.)'],
       ['{{disambiguation}}', 'Disambiguation comment'],
       ['{{DATE}}', 'Today\'s date (YYYY-MM-DD)'],
       ['{{DATE:FORMAT}}', 'Today\'s date with custom format'],

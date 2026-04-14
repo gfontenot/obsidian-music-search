@@ -222,16 +222,13 @@ describe('getReleaseDetails', () => {
     expect(r.tracks[1]).toEqual({ number: '2', title: 'Paranoid Android', duration: '6:23', durationMs: 383000 });
   });
 
-  it('populates label and catalogNumber from primary release', async () => {
+  it('populates trackCount from primary release', async () => {
     setupFetch({
       '/release-group/rg-001': RELEASE_GROUP_WITH_RELEASES,
       '/release/rel-001': RELEASE_DETAIL,
     });
 
     const r = await getReleaseDetails('rg-001');
-    expect(r.label).toBe('Parlophone');
-    expect(r.catalogNumber).toBe('NODATA 01');
-    expect(r.format).toBe('CD');
     expect(r.trackCount).toBe(2);
   });
 
@@ -301,7 +298,6 @@ describe('getReleaseDetails', () => {
     expect(r.tracks).toHaveLength(2);
     expect(r.tracks[0].title).toBe('Disc 1 Track 1');
     expect(r.tracks[1].title).toBe('Disc 2 Track 1');
-    expect(r.format).toBe('CD + CD');
   });
 
   it('throws on API error', async () => {
