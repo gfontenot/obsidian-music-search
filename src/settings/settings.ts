@@ -133,7 +133,7 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     varTable.style.fontSize = '12px';
 
     const headers = varTable.createEl('tr');
-    ['Variable', 'Description'].forEach(h => {
+    ['Variable', 'YAML type', 'Description'].forEach(h => {
       const th = headers.createEl('th');
       th.style.textAlign = 'left';
       th.style.padding = '4px 8px';
@@ -141,32 +141,37 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       th.setText(h);
     });
 
-    const variables = [
-      ['{{tags}}', 'Custom tags (optional, will default to an empty list)'],
-      ['{{title}}', 'Album/release title'],
-      ['{{artist}}', 'Artist name(s)'],
-      ['{{artistMbid}}', 'Artist MusicBrainz ID'],
-      ['{{year}}', 'First release year (e.g. 1997)'],
-      ['{{date}}', 'First release date (e.g. 1997-05-21)'],
-      ['{{trackCount}}', 'Number of tracks'],
-      ['{{trackList}}', 'Formatted tracklist'],
-      ['{{genres}}', 'Genres as YAML list items'],
-      ['{{genresInline}}', 'Genres as comma-separated string'],
-      ['{{coverUrl}}', 'Cover art URL'],
-      ['{{mbid}}', 'MusicBrainz release group ID'],
-      ['{{releaseGroupMbid}}', 'MusicBrainz release group ID'],
-      ['{{mbUrl}}', 'MusicBrainz release group URL'],
-      ['{{releaseType}}', 'Release type (Album, Single, EP, etc.)'],
-      ['{{disambiguation}}', 'Disambiguation comment'],
+    const variables: [string, string, string][] = [
+      ['{{tags}}',            'string[]', 'Custom tags (optional, defaults to an empty list)'],
+      ['{{title}}',           'string',   'Album/release title'],
+      ['{{artist}}',          'string',   'Artist name(s)'],
+      ['{{artistMbid}}',      'string',   'Artist MusicBrainz ID'],
+      ['{{year}}',            'string',   'First release year (e.g. "1997")'],
+      ['{{date}}',            'string',   'First release date (e.g. "1997-05-21")'],
+      ['{{trackCount}}',      'number',   'Number of tracks'],
+      ['{{trackList}}',       'string',   'Formatted tracklist (use in note body, not frontmatter)'],
+      ['{{genres}}',          'string[]', 'Genres as a YAML list'],
+      ['{{genresInline}}',    'string',   'Genres as a comma-separated string'],
+      ['{{coverUrl}}',        'string',   'Cover art URL'],
+      ['{{mbid}}',            'string',   'MusicBrainz release group ID'],
+      ['{{releaseGroupMbid}}','string',   'MusicBrainz release group ID (alias for {{mbid}})'],
+      ['{{mbUrl}}',           'string',   'MusicBrainz release group URL'],
+      ['{{releaseType}}',     'string',   'Release type (Album, Single, EP, etc.)'],
+      ['{{disambiguation}}',  'string',   'Disambiguation comment'],
     ];
 
-    for (const [variable, desc] of variables) {
+    for (const [variable, type, desc] of variables) {
       const row = varTable.createEl('tr');
       const tdVar = row.createEl('td');
       tdVar.style.padding = '4px 8px';
       tdVar.style.fontFamily = 'monospace';
       tdVar.style.color = 'var(--text-accent)';
       tdVar.setText(variable);
+      const tdType = row.createEl('td');
+      tdType.style.padding = '4px 8px';
+      tdType.style.fontFamily = 'monospace';
+      tdType.style.color = 'var(--text-muted)';
+      tdType.setText(type);
       const tdDesc = row.createEl('td');
       tdDesc.style.padding = '4px 8px';
       tdDesc.setText(desc);
