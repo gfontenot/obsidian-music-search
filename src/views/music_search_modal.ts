@@ -1,10 +1,10 @@
-import { App, Modal, Setting } from 'obsidian';
+import { App, ButtonComponent, Modal, Setting, TextComponent } from 'obsidian';
 
 export class MusicSearchModal extends Modal {
   private query = '';
-  private onSubmit: (query: string) => void;
+  private onSubmit: (query: string) => Promise<void>;
 
-  constructor(app: App, onSubmit: (query: string) => void) {
+  constructor(app: App, onSubmit: (query: string) => Promise<void>) {
     super(app);
     this.onSubmit = onSubmit;
   }
@@ -19,39 +19,54 @@ export class MusicSearchModal extends Modal {
       cls: 'setting-item-description',
     });
 
+    let searchText: TextComponent;
+    let searchBtn: ButtonComponent;
+
+    const errorEl = contentEl.createEl('p', { cls: 'mod-warning' });
+    errorEl.style.display = 'none';
+
+    const setLoading = (loading: boolean) => {
+      searchText.setDisabled(loading);
+      searchBtn.setDisabled(loading);
+      searchBtn.setButtonText(loading ? 'Searching…' : 'Search');
+    };
+
+    const doSubmit = () => {
+      const q = this.query.trim();
+      if (!q) return;
+      errorEl.style.display = 'none';
+      setLoading(true);
+      this.onSubmit(q)
+        .then(() => this.close())
+        .catch(err => {
+          setLoading(false);
+          errorEl.style.display = '';
+          errorEl.setText(err.message);
+        });
+    };
+
     new Setting(contentEl)
       .setName('Search query')
       .setDesc('e.g. "Radiohead OK Computer" or "Burial Untrue"')
       .addText(text => {
+        searchText = text;
         text
           .setPlaceholder('Artist, album, or both...')
           .setValue(this.query)
-          .onChange(value => {
-            this.query = value;
-          });
+          .onChange(value => { this.query = value; });
 
-        // Submit on Enter
         text.inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
-          if (e.key === 'Enter' && this.query.trim()) {
-            this.close();
-            this.onSubmit(this.query.trim());
-          }
+          if (e.key === 'Enter') doSubmit();
         });
 
-        // Auto-focus
         setTimeout(() => text.inputEl.focus(), 50);
       });
 
     new Setting(contentEl)
-      .addButton(btn => btn
-        .setButtonText('Search')
-        .setCta()
-        .onClick(() => {
-          if (this.query.trim()) {
-            this.close();
-            this.onSubmit(this.query.trim());
-          }
-        }))
+      .addButton(btn => {
+        searchBtn = btn;
+        btn.setButtonText('Search').setCta().onClick(doSubmit);
+      })
       .addButton(btn => btn
         .setButtonText('Cancel')
         .onClick(() => this.close()));

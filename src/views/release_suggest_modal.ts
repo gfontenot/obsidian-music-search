@@ -1,4 +1,4 @@
-import { App, FuzzyMatch, FuzzySuggestModal, Notice } from 'obsidian';
+import { App, FuzzyMatch, FuzzySuggestModal, Modal } from 'obsidian';
 import { Release } from '../models/release.model';
 
 export class ReleaseSuggestModal extends FuzzySuggestModal<Release> {
@@ -79,22 +79,25 @@ export class ReleaseSuggestModal extends FuzzySuggestModal<Release> {
   }
 }
 
-export class LoadingModal {
-  private notice: Notice;
+export class LoadingProgressModal extends Modal {
+  private messageEl: HTMLElement;
 
-  constructor(message = 'Searching MusicBrainz...') {
-    this.notice = new Notice(message, 0);
+  constructor(app: App, private message: string) {
+    super(app);
+  }
+
+  onOpen() {
+    this.contentEl.empty();
+    this.messageEl = this.contentEl.createEl('p', { text: this.message });
+    this.messageEl.style.textAlign = 'center';
+    this.messageEl.style.padding = '16px 0';
   }
 
   setMessage(message: string) {
-    // Update the notice content
-    const noticeEl = (this.notice as unknown as { noticeEl: HTMLElement }).noticeEl;
-    if (noticeEl) {
-      noticeEl.setText(message);
-    }
+    if (this.messageEl) this.messageEl.setText(message);
   }
 
-  hide() {
-    this.notice.hide();
+  onClose() {
+    this.contentEl.empty();
   }
 }

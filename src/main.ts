@@ -1,7 +1,7 @@
 import { App, Notice, Plugin, TFile, TFolder, normalizePath } from 'obsidian';
 import { MusicSearchSettings, DEFAULT_SETTINGS, DEFAULT_NOTE_TEMPLATE, MusicSearchSettingTab } from './settings/settings';
 import { MusicSearchModal } from './views/music_search_modal';
-import { ReleaseSuggestModal, LoadingModal } from './views/release_suggest_modal';
+import { ReleaseSuggestModal, LoadingProgressModal } from './views/release_suggest_modal';
 import { searchReleases, getReleaseDetails } from './api/musicbrainz';
 import { Release } from './models/release.model';
 import { replaceVariables, getTemplateContents, makeFileName, appendCustomFields } from './utils/template';
@@ -43,46 +43,32 @@ export default class MusicSearchPlugin extends Plugin {
   }
 
   async createNewReleaseNote() {
-    // Step 1: Show search modal
     new MusicSearchModal(this.app, async (query) => {
-      // Step 2: Show loading notice and search
-      const loading = new LoadingModal(`Searching MusicBrainz for "${query}"...`);
-
-      let releases: Release[] = [];
+      let releases: Release[];
       try {
         releases = await searchReleases(query);
       } catch (err) {
-        loading.hide();
-        new Notice(`Search failed: ${err.message}`);
-        return;
+        throw new Error(`Search failed: ${err.message}`);
       }
-
-      loading.hide();
 
       if (releases.length === 0) {
-        new Notice('No releases found. Try a different search.');
-        return;
+        throw new Error('No releases found. Try a different search.');
       }
 
-      // Step 3: Show suggestion modal to pick a release
       new ReleaseSuggestModal(
         this.app,
         releases,
         async (selected) => {
-          // Step 4: Fetch full details (with tracklist)
-          const detailsLoading = new LoadingModal('Fetching release details...');
-          let release: Release;
+          const loading = new LoadingProgressModal(this.app, 'Fetching release details…');
+          loading.open();
           try {
-            release = await getReleaseDetails(selected.mbid);
+            const release = await getReleaseDetails(selected.mbid);
+            await this.createNote(release);
           } catch (err) {
-            detailsLoading.hide();
             new Notice(`Failed to fetch release details: ${err.message}`);
-            return;
+          } finally {
+            loading.close();
           }
-          detailsLoading.hide();
-
-          // Step 5: Create the note
-          await this.createNote(release);
         },
         this.settings.showCoverInSearch,
       ).open();
