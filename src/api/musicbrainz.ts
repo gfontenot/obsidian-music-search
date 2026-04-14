@@ -1,16 +1,30 @@
 import { Release, Track, formatDuration } from '../models/release.model';
 
 const MB_API_BASE = 'https://musicbrainz.org/ws/2';
-const COVER_ART_BASE = 'https://coverartarchive.org/release';
+const COVER_ART_BASE = 'https://coverartarchive.org';
 const USER_AGENT = 'ObsidianMusicSearch/1.0.0 (https://github.com/your-username/obsidian-music-search)';
 
-interface MBSearchResult {
-  releases: MBRelease[];
+interface MBReleaseGroupSearchResult {
+  'release-groups': MBReleaseGroupItem[];
   count: number;
   offset: number;
 }
 
-interface MBRelease {
+interface MBReleaseGroupItem {
+  id: string;
+  title: string;
+  'first-release-date'?: string;
+  'primary-type'?: string;
+  'secondary-types'?: string[];
+  disambiguation?: string;
+  'artist-credit'?: MBArtistCredit[];
+  genres?: MBGenre[];
+  tags?: MBTag[];
+  releases?: MBReleaseStub[];
+  score?: number;
+}
+
+interface MBReleaseStub {
   id: string;
   title: string;
   date?: string;
@@ -18,20 +32,8 @@ interface MBRelease {
   status?: string;
   barcode?: string;
   disambiguation?: string;
-  'artist-credit'?: MBArtistCredit[];
   'label-info'?: MBLabelInfo[];
   media?: MBMedium[];
-  'release-group'?: MBReleaseGroup;
-  genres?: MBGenre[];
-  score?: number;
-}
-
-interface MBReleaseGroup {
-  id: string;
-  'primary-type'?: string;
-  'secondary-types'?: string[];
-  genres?: MBGenre[];
-  tags?: MBTag[];
 }
 
 interface MBArtistCredit {
@@ -92,26 +94,79 @@ async function mbFetch(url: string): Promise<unknown> {
 
 export async function searchReleases(query: string): Promise<Release[]> {
   const encoded = encodeURIComponent(query);
-  const url = `${MB_API_BASE}/release?query=${encoded}&limit=25&fmt=json&inc=artist-credits+labels+release-groups+genres`;
+  const url = `${MB_API_BASE}/release-group?query=${encoded}&limit=25&fmt=json&inc=artist-credits+genres`;
 
-  const data = await mbFetch(url) as MBSearchResult;
+  const data = await mbFetch(url) as MBReleaseGroupSearchResult;
 
-  const releases = await Promise.all(
-    (data.releases || []).map(r => mapMBRelease(r))
+  return Promise.all(
+    (data['release-groups'] || []).map(rg => mapMBReleaseGroup(rg))
   );
-
-  return releases;
 }
 
-export async function getReleaseDetails(mbid: string): Promise<Release> {
-  const url = `${MB_API_BASE}/release/${mbid}?fmt=json&inc=artist-credits+labels+recordings+release-groups+genres+tags+url-rels`;
-  const data = await mbFetch(url) as MBRelease;
-  return mapMBRelease(data, true);
+export async function getReleaseDetails(releaseGroupMbid: string): Promise<Release> {
+  const url = `${MB_API_BASE}/release-group/${releaseGroupMbid}?fmt=json&inc=artist-credits+releases+genres+tags`;
+  const data = await mbFetch(url) as MBReleaseGroupItem;
+
+  // Find the primary release to get the tracklist
+  const releases = data.releases || [];
+  const primaryRelease = pickPrimaryRelease(releases);
+
+  let tracks: Track[] = [];
+  let label = '';
+  let catalogNumber = '';
+  let format = '';
+  let trackCount = 0;
+
+  if (primaryRelease) {
+    const releaseUrl = `${MB_API_BASE}/release/${primaryRelease.id}?fmt=json&inc=artist-credits+labels+recordings`;
+    const releaseData = await mbFetch(releaseUrl) as MBReleaseStub & { media?: MBMedium[] };
+    const media = releaseData.media || [];
+
+    format = media.map(m => m.format || 'Unknown').join(' + ');
+    trackCount = media.reduce((sum, m) => sum + (m['track-count'] || 0), 0);
+
+    const labelInfo = releaseData['label-info'] || [];
+    label = labelInfo[0]?.label?.name || '';
+    catalogNumber = labelInfo[0]?.['catalog-number'] || '';
+
+    let trackNum = 1;
+    for (const medium of media) {
+      for (const t of (medium.tracks || [])) {
+        tracks.push({
+          number: t.number || String(trackNum),
+          title: t.title,
+          duration: t.length ? formatDuration(t.length) : '',
+          durationMs: t.length || 0,
+        });
+        trackNum++;
+      }
+    }
+  }
+
+  const release = await mapMBReleaseGroup(data);
+  return {
+    ...release,
+    tracks,
+    trackCount: trackCount || release.trackCount,
+    label: label || release.label,
+    catalogNumber: catalogNumber || release.catalogNumber,
+    format: format || release.format,
+  };
 }
 
-async function getCoverArtUrl(mbid: string): Promise<string> {
+function pickPrimaryRelease(releases: MBReleaseStub[]): MBReleaseStub | undefined {
+  const official = releases.filter(r => r.status === 'Official');
+  const pool = official.length > 0 ? official : releases;
+  return pool.slice().sort((a, b) => {
+    const da = a.date || '';
+    const db = b.date || '';
+    return da < db ? -1 : da > db ? 1 : 0;
+  })[0];
+}
+
+async function getCoverArtUrl(mbid: string, type: 'release' | 'release-group'): Promise<string> {
   try {
-    const url = `${COVER_ART_BASE}/${mbid}`;
+    const url = `${COVER_ART_BASE}/${type}/${mbid}`;
     const response = await fetch(url, {
       headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json' },
     });
@@ -128,33 +183,22 @@ async function getCoverArtUrl(mbid: string): Promise<string> {
   return '';
 }
 
-async function mapMBRelease(r: MBRelease, includeTracks = false): Promise<Release> {
-  const artistCredit = r['artist-credit'] || [];
+async function mapMBReleaseGroup(rg: MBReleaseGroupItem): Promise<Release> {
+  const artistCredit = rg['artist-credit'] || [];
   const artist = artistCredit
     .map(ac => (ac.name || ac.artist?.name || '') + (ac.joinphrase || ''))
     .join('') || 'Unknown Artist';
 
   const artistMbid = artistCredit[0]?.artist?.id || '';
 
-  const labelInfo = r['label-info'] || [];
-  const label = labelInfo[0]?.label?.name || '';
-  const catalogNumber = labelInfo[0]?.['catalog-number'] || '';
-
-  const media = r.media || [];
-  const format = media.map(m => m.format || 'Unknown').join(' + ') || '';
-  const trackCount = media.reduce((sum, m) => sum + (m['track-count'] || 0), 0);
-
-  const releaseGroup = r['release-group'] || {} as MBReleaseGroup;
   const releaseType = [
-    releaseGroup['primary-type'],
-    ...(releaseGroup['secondary-types'] || []),
+    rg['primary-type'],
+    ...(rg['secondary-types'] || []),
   ].filter(Boolean).join(' + ') || '';
 
-  // Gather genres from release and release group
   const allGenres = [
-    ...(r.genres || []),
-    ...(releaseGroup.genres || []),
-    ...(releaseGroup.tags || []),
+    ...(rg.genres || []),
+    ...(rg.tags || []),
   ];
   const genreMap = new Map<string, number>();
   for (const g of allGenres) {
@@ -165,51 +209,34 @@ async function mapMBRelease(r: MBRelease, includeTracks = false): Promise<Releas
     .slice(0, 10)
     .map(([name]) => name);
 
-  const date = r.date || '';
+  const date = rg['first-release-date'] || '';
   const year = date ? date.substring(0, 4) : '';
 
-  let tracks: Track[] = [];
-  if (includeTracks && media.length > 0) {
-    let trackNum = 1;
-    for (const medium of media) {
-      for (const t of (medium.tracks || [])) {
-        tracks.push({
-          number: t.number || String(trackNum),
-          title: t.title,
-          duration: t.length ? formatDuration(t.length) : '',
-          durationMs: t.length || 0,
-        });
-        trackNum++;
-      }
-    }
-  }
-
-  // Try to get cover art
   let coverUrl = '';
-  if (r.id) {
-    coverUrl = await getCoverArtUrl(r.id);
+  if (rg.id) {
+    coverUrl = await getCoverArtUrl(rg.id, 'release-group');
   }
 
   return {
-    mbid: r.id,
-    title: r.title,
+    mbid: rg.id,
+    title: rg.title,
     artist,
     artistMbid,
     date,
     year,
-    country: r.country || '',
-    label,
-    catalogNumber,
-    format,
-    trackCount,
-    tracks,
+    country: '',
+    label: '',
+    catalogNumber: '',
+    format: '',
+    trackCount: 0,
+    tracks: [],
     genres,
     coverUrl,
-    releaseGroupMbid: releaseGroup.id || '',
+    releaseGroupMbid: rg.id,
     releaseType,
-    status: r.status || '',
-    barcode: r.barcode || '',
-    disambiguation: r.disambiguation || '',
-    mbUrl: `https://musicbrainz.org/release/${r.id}`,
+    status: '',
+    barcode: '',
+    disambiguation: rg.disambiguation || '',
+    mbUrl: `https://musicbrainz.org/release-group/${rg.id}`,
   };
 }

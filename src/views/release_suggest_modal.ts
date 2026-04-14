@@ -68,9 +68,7 @@ export class ReleaseSuggestModal extends FuzzySuggestModal<Release> {
     const metaParts: string[] = [];
     if (release.year) metaParts.push(release.year);
     if (release.releaseType) metaParts.push(release.releaseType);
-    if (release.format) metaParts.push(release.format);
-    if (release.label) metaParts.push(release.label);
-    if (release.country) metaParts.push(release.country);
+    if (release.genres.length > 0) metaParts.push(release.genres.slice(0, 2).join(', '));
     if (release.disambiguation) metaParts.push(`(${release.disambiguation})`);
 
     meta.setText(metaParts.join(' · '));
