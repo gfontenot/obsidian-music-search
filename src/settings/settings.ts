@@ -7,6 +7,7 @@ export interface MusicSearchSettings {
   templateFile: string;
   openNewNote: boolean;
   showCoverInSearch: boolean;
+  tags: string;
 }
 
 export const DEFAULT_SETTINGS: MusicSearchSettings = {
@@ -15,9 +16,11 @@ export const DEFAULT_SETTINGS: MusicSearchSettings = {
   templateFile: '',
   openNewNote: true,
   showCoverInSearch: true,
+  tags: '',
 };
 
 export const DEFAULT_NOTE_TEMPLATE = `---
+tags:{{tags}}
 artist: {{artist}}
 artist-mbid: {{artistMbid}}
 title: {{title}}
@@ -75,6 +78,18 @@ export class MusicSearchSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }));
 
+    // Tags
+    new Setting(containerEl)
+      .setName('Tags')
+      .setDesc('Comma-separated tags to add to every note (e.g. "music, albums, vinyl").')
+      .addText(text => text
+        .setPlaceholder('e.g. music, albums')
+        .setValue(this.plugin.settings.tags)
+        .onChange(async (value) => {
+          this.plugin.settings.tags = value;
+          await this.plugin.saveSettings();
+        }));
+
     // Template file
     new Setting(containerEl)
       .setName('Template file')
@@ -127,6 +142,7 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     });
 
     const variables = [
+      ['{{tags}}', 'Custom tags (optional, will default to an empty list)'],
       ['{{title}}', 'Album/release title'],
       ['{{artist}}', 'Artist name(s)'],
       ['{{artistMbid}}', 'Artist MusicBrainz ID'],

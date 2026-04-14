@@ -101,6 +101,21 @@ describe('replaceVariables', () => {
     expect(result).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
   });
 
+  it('renders user tags as YAML list', () => {
+    const result = replaceVariables('{{tags}}', makeRelease(), ['music', 'albums']);
+    expect(result).toBe('\n  - music\n  - albums');
+  });
+
+  it('renders empty user tags as YAML empty array', () => {
+    const result = replaceVariables('{{tags}}', makeRelease(), []);
+    expect(result).toBe('[]');
+  });
+
+  it('defaults to empty tags when third argument is omitted', () => {
+    const result = replaceVariables('{{tags}}', makeRelease());
+    expect(result).toBe('[]');
+  });
+
   it('handles disambiguation field', () => {
     const release = makeRelease({ disambiguation: 'Remaster' });
     expect(replaceVariables('{{disambiguation}}', release)).toBe('Remaster');

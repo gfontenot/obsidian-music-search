@@ -1,7 +1,7 @@
 import { App, TFile } from 'obsidian';
 import { Release } from '../models/release.model';
 
-export function replaceVariables(template: string, release: Release): string {
+export function replaceVariables(template: string, release: Release, userTags: string[] = []): string {
   const now = new Date();
   const dateStr = now.toISOString().split('T')[0];
 
@@ -10,6 +10,11 @@ export function replaceVariables(template: string, release: Release): string {
     ? release.tracks.map(t => `${t.number}. ${t.title}${t.duration ? ` (${t.duration})` : ''}`).join('\n')
     : '';
 
+  // Build tags as YAML list
+  const tagsYaml = userTags.length > 0
+    ? '\n' + userTags.map(t => `  - ${t}`).join('\n')
+    : '[]';
+
   // Build genres as YAML list or comma-separated
   const genresYaml = release.genres.length > 0
     ? '\n' + release.genres.map(g => `  - ${g}`).join('\n')
@@ -17,6 +22,7 @@ export function replaceVariables(template: string, release: Release): string {
   const genresInline = release.genres.join(', ');
 
   const vars: Record<string, string> = {
+    tags: tagsYaml,
     title: release.title,
     artist: release.artist,
     artistMbid: release.artistMbid,

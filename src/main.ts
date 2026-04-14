@@ -102,7 +102,10 @@ export default class MusicSearchPlugin extends Plugin {
       templateContent = DEFAULT_NOTE_TEMPLATE;
     }
 
-    const noteContent = replaceVariables(templateContent, release);
+    const userTags = this.settings.tags
+      ? this.settings.tags.split(',').map(t => t.trim()).filter(Boolean)
+      : [];
+    const noteContent = replaceVariables(templateContent, release, userTags);
 
     // Determine file name
     const fileName = makeFileName(this.settings.fileNameTemplate, release);
