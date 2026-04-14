@@ -1,0 +1,160 @@
+import { App, Notice, Plugin, TFile, TFolder, normalizePath } from 'obsidian';
+import { MusicSearchSettings, DEFAULT_SETTINGS, DEFAULT_NOTE_TEMPLATE, MusicSearchSettingTab } from './settings/settings';
+import { MusicSearchModal } from './views/music_search_modal';
+import { ReleaseSuggestModal, LoadingModal } from './views/release_suggest_modal';
+import { searchReleases, getReleaseDetails } from './api/musicbrainz';
+import { Release } from './models/release.model';
+import { replaceVariables, getTemplateContents, makeFileName } from './utils/template';
+
+export default class MusicSearchPlugin extends Plugin {
+  settings: MusicSearchSettings;
+
+  async onload() {
+    await this.loadSettings();
+
+    // Ribbon icon
+    this.addRibbonIcon('music', 'Create new music release note', () => {
+      this.createNewReleaseNote();
+    });
+
+    // Command palette
+    this.addCommand({
+      id: 'search-music-release',
+      name: 'Search music release',
+      callback: () => this.createNewReleaseNote(),
+    });
+
+    // Settings tab
+    this.addSettingTab(new MusicSearchSettingTab(this.app, this));
+
+    console.log('Music Search plugin loaded');
+  }
+
+  onunload() {
+    console.log('Music Search plugin unloaded');
+  }
+
+  async loadSettings() {
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
+
+  async saveSettings() {
+    await this.saveData(this.settings);
+  }
+
+  async createNewReleaseNote() {
+    // Step 1: Show search modal
+    new MusicSearchModal(this.app, async (query) => {
+      // Step 2: Show loading notice and search
+      const loading = new LoadingModal(`Searching MusicBrainz for "${query}"...`);
+
+      let releases: Release[] = [];
+      try {
+        releases = await searchReleases(query);
+      } catch (err) {
+        loading.hide();
+        new Notice(`Search failed: ${err.message}`);
+        return;
+      }
+
+      loading.hide();
+
+      if (releases.length === 0) {
+        new Notice('No releases found. Try a different search.');
+        return;
+      }
+
+      // Step 3: Show suggestion modal to pick a release
+      new ReleaseSuggestModal(
+        this.app,
+        releases,
+        async (selected) => {
+          // Step 4: Fetch full details (with tracklist)
+          const detailsLoading = new LoadingModal('Fetching release details...');
+          let release: Release;
+          try {
+            release = await getReleaseDetails(selected.mbid);
+          } catch (err) {
+            detailsLoading.hide();
+            new Notice(`Failed to fetch release details: ${err.message}`);
+            return;
+          }
+          detailsLoading.hide();
+
+          // Step 5: Create the note
+          await this.createNote(release);
+        },
+        this.settings.showCoverInSearch,
+      ).open();
+    }).open();
+  }
+
+  async createNote(release: Release) {
+    // Determine note content
+    let templateContent: string;
+    if (this.settings.templateFile) {
+      templateContent = await getTemplateContents(this.app, this.settings.templateFile);
+      if (!templateContent) {
+        new Notice(`Template file not found: ${this.settings.templateFile}. Using default template.`);
+        templateContent = DEFAULT_NOTE_TEMPLATE;
+      }
+    } else {
+      templateContent = DEFAULT_NOTE_TEMPLATE;
+    }
+
+    const noteContent = replaceVariables(templateContent, release);
+
+    // Determine file name
+    const fileName = makeFileName(this.settings.fileNameTemplate, release);
+    
+    // Determine folder
+    const folder = this.settings.folder
+      ? normalizePath(this.settings.folder)
+      : '';
+
+    // Ensure folder exists
+    if (folder) {
+      await this.ensureFolderExists(folder);
+    }
+
+    const filePath = normalizePath(
+      folder ? `${folder}/${fileName}.md` : `${fileName}.md`
+    );
+
+    // Check if file already exists
+    const existing = this.app.vault.getAbstractFileByPath(filePath);
+    if (existing instanceof TFile) {
+      new Notice(`Note already exists: ${filePath}`);
+      if (this.settings.openNewNote) {
+        await this.app.workspace.getLeaf(false).openFile(existing);
+      }
+      return;
+    }
+
+    // Create the file
+    try {
+      const file = await this.app.vault.create(filePath, noteContent);
+      new Notice(`Created: ${fileName}`);
+
+      if (this.settings.openNewNote) {
+        await this.app.workspace.getLeaf(false).openFile(file);
+      }
+    } catch (err) {
+      new Notice(`Failed to create note: ${err.message}`);
+    }
+  }
+
+  async ensureFolderExists(folderPath: string) {
+    const parts = folderPath.split('/');
+    let current = '';
+    for (const part of parts) {
+      current = current ? `${current}/${part}` : part;
+      const existing = this.app.vault.getAbstractFileByPath(current);
+      if (!existing) {
+        await this.app.vault.createFolder(current);
+      } else if (!(existing instanceof TFolder)) {
+        throw new Error(`${current} exists but is not a folder`);
+      }
+    }
+  }
+}

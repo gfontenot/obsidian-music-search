@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output (compiled from src/)
+main.js
+main.js.map
+
+# Obsidian plugin user data
+data.json
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/

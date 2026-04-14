@@ -1,0 +1,55 @@
+/* Music Search Plugin Styles */
+
+.music-search-suggestion-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.music-search-cover img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.music-search-cover-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  background-color: var(--background-modifier-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.music-search-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.music-search-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.music-search-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Make suggestion items taller when covers are shown */
+.suggestion-item .music-search-suggestion-wrapper {
+  min-height: 52px;
+}
