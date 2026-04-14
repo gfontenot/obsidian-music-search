@@ -20,18 +20,18 @@ export const DEFAULT_SETTINGS: MusicSearchSettings = {
 };
 
 export const DEFAULT_NOTE_TEMPLATE = `---
-tags:{{tags}}
+tags: {{tags}}
 artist: {{artist}}
-artist-mbid: {{artistMbid}}
 title: {{title}}
-disambiguation: {{disambiguation}}
-release-date: {{date}}
-release-year: {{year}}
-album-type: {{releaseType}}
-track-count: {{trackCount}}
 genres:{{genres}}
 album-art: {{coverUrl}}
+album-type: {{releaseType}}
+track-count: {{trackCount}}
+release-date: {{date}}
+release-year: {{year}}
+disambiguation: {{disambiguation}}
 mbid: {{mbid}}
+artist-mbid: {{artistMbid}}
 link-musicbrainz: {{mbUrl}}
 ---
 
@@ -142,22 +142,22 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     });
 
     const variables: [string, string, string][] = [
-      ['{{tags}}',            'string[]', 'Custom tags (optional, defaults to an empty list)'],
-      ['{{title}}',           'string',   'Album/release title'],
-      ['{{artist}}',          'string',   'Artist name(s)'],
-      ['{{artistMbid}}',      'string',   'Artist MusicBrainz ID'],
-      ['{{year}}',            'string',   'First release year (e.g. "1997")'],
-      ['{{date}}',            'string',   'First release date (e.g. "1997-05-21")'],
-      ['{{trackCount}}',      'number',   'Number of tracks'],
-      ['{{trackList}}',       'string',   'Formatted tracklist (use in note body, not frontmatter)'],
-      ['{{genres}}',          'string[]', 'Genres as a YAML list'],
-      ['{{genresInline}}',    'string',   'Genres as a comma-separated string'],
-      ['{{coverUrl}}',        'string',   'Cover art URL'],
-      ['{{mbid}}',            'string',   'MusicBrainz release group ID'],
-      ['{{releaseGroupMbid}}','string',   'MusicBrainz release group ID (alias for {{mbid}})'],
-      ['{{mbUrl}}',           'string',   'MusicBrainz release group URL'],
-      ['{{releaseType}}',     'string',   'Release type (Album, Single, EP, etc.)'],
-      ['{{disambiguation}}',  'string',   'Disambiguation comment'],
+      ['{{tags}}', 'string[]', 'Custom tags (optional, defaults to an empty list)'],
+      ['{{title}}', 'string', 'Album/release title'],
+      ['{{artist}}', 'string', 'Artist name(s)'],
+      ['{{artistMbid}}', 'string', 'Artist MusicBrainz ID'],
+      ['{{year}}', 'string', 'First release year (e.g. "1997")'],
+      ['{{date}}', 'string', 'First release date (e.g. "1997-05-21")'],
+      ['{{trackCount}}', 'number', 'Number of tracks'],
+      ['{{trackList}}', 'string', 'Formatted tracklist (use in note body, not frontmatter)'],
+      ['{{genres}}', 'string[]', 'Genres as a YAML list'],
+      ['{{genresInline}}', 'string', 'Genres as a comma-separated string'],
+      ['{{coverUrl}}', 'string', 'Cover art URL'],
+      ['{{mbid}}', 'string', 'MusicBrainz release group ID'],
+      ['{{releaseGroupMbid}}', 'string', 'MusicBrainz release group ID (alias for {{mbid}})'],
+      ['{{mbUrl}}', 'string', 'MusicBrainz release group URL'],
+      ['{{releaseType}}', 'string', 'Release type (Album, Single, EP, etc.)'],
+      ['{{disambiguation}}', 'string', 'Disambiguation comment'],
     ];
 
     for (const [variable, type, desc] of variables) {
