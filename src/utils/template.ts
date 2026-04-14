@@ -63,9 +63,13 @@ export function replaceVariables(template: string, release: Release, userTags: s
     disambiguation: toYamlScalar(release.disambiguation),
   };
 
-  // Handle standard variables
+  const now = new Date();
   let result = template.replace(/\{\{([^}]+)\}\}/g, (_match, key) => {
     const trimmed = key.trim();
+    if (trimmed === 'DATE' || trimmed.startsWith('DATE:')) {
+      const fmt = trimmed === 'DATE' ? 'YYYY-MM-DD' : trimmed.slice(5);
+      return toYamlScalar(formatDate(now, fmt));
+    }
     return vars[trimmed] !== undefined ? vars[trimmed] : '';
   });
 

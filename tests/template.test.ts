@@ -163,6 +163,29 @@ describe('replaceVariables', () => {
     });
   });
 
+  describe('DATE variable', () => {
+    it('substitutes {{DATE}} with current date in YYYY-MM-DD format', () => {
+      const result = replaceVariables('{{DATE}}', makeRelease());
+      expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+
+    it('substitutes {{DATE:FORMAT}} with a custom format', () => {
+      const result = replaceVariables('{{DATE:YYYY/MM/DD}}', makeRelease());
+      expect(result).toMatch(/^\d{4}\/\d{2}\/\d{2}$/);
+    });
+
+    it('substitutes {{DATE:YYYY}} with just the year, quoted as a YAML string', () => {
+      const result = replaceVariables('{{DATE:YYYY}}', makeRelease());
+      expect(result).toMatch(/^"\d{4}"$/);
+    });
+
+    it('uses the same timestamp for all DATE occurrences in one call', () => {
+      const result = replaceVariables('{{DATE}} {{DATE}}', makeRelease());
+      const [a, b] = result.split(' ');
+      expect(a).toBe(b);
+    });
+  });
+
   it('handles disambiguation field', () => {
     const release = makeRelease({ disambiguation: 'Remaster' });
     expect(replaceVariables('{{disambiguation}}', release)).toBe('Remaster');

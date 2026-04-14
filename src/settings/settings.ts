@@ -260,6 +260,7 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       ['{{wikipediaUrl}}', 'string', 'Wikipedia article URL'],
       ['{{releaseType}}', 'string', 'Release type (Album, Single, EP, etc.)'],
       ['{{disambiguation}}', 'string', 'Disambiguation comment'],
+      ['{{DATE}}', 'string', 'Current date (YYYY-MM-DD). Use {{DATE:FORMAT}} for custom format, e.g. {{DATE:YYYY/MM/DD}}'],
     ];
 
     for (const [variable, type, desc] of variables) {
