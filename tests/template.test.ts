@@ -24,6 +24,8 @@ function makeRelease(overrides: Partial<Release> = {}): Release {
     barcode: '724384553920',
     disambiguation: '',
     mbUrl: 'https://musicbrainz.org/release-group/rg-abc123',
+    discogsUrl: '',
+    wikipediaUrl: '',
     ...overrides,
   };
 }

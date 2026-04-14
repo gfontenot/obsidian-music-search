@@ -21,7 +21,16 @@ interface MBReleaseGroupItem {
   genres?: MBGenre[];
   tags?: MBTag[];
   releases?: MBReleaseStub[];
+  relations?: MBUrlRelation[];
   score?: number;
+}
+
+interface MBUrlRelation {
+  type: string;
+  'target-type': string;
+  url: {
+    resource: string;
+  };
 }
 
 interface MBReleaseStub {
@@ -92,7 +101,7 @@ export async function searchReleases(query: string): Promise<Release[]> {
 }
 
 export async function getReleaseDetails(releaseGroupMbid: string): Promise<Release> {
-  const url = `${MB_API_BASE}/release-group/${releaseGroupMbid}?fmt=json&inc=artist-credits+releases+genres+tags`;
+  const url = `${MB_API_BASE}/release-group/${releaseGroupMbid}?fmt=json&inc=artist-credits+releases+genres+tags+url-rels`;
   const data = await mbFetch(url) as MBReleaseGroupItem;
 
   // Find the primary release to get the tracklist
@@ -123,8 +132,35 @@ export async function getReleaseDetails(releaseGroupMbid: string): Promise<Relea
     }
   }
 
+  const relations = data.relations || [];
+  const discogsUrl = extractUrlRelation(relations, 'discogs');
+  const wikidataUrl = extractUrlRelation(relations, 'wikidata');
+  const wikipediaUrl = wikidataUrl ? await getWikipediaUrl(wikidataUrl) : '';
+
   const release = await mapMBReleaseGroup(data);
-  return { ...release, tracks, trackCount: trackCount || release.trackCount };
+  return { ...release, tracks, trackCount: trackCount || release.trackCount, discogsUrl, wikipediaUrl };
+}
+
+function extractUrlRelation(relations: MBUrlRelation[], type: string): string {
+  return relations.find(r => r['target-type'] === 'url' && r.type === type)?.url?.resource || '';
+}
+
+async function getWikipediaUrl(wikidataUrl: string): Promise<string> {
+  try {
+    const entityId = wikidataUrl.split('/').pop();
+    if (!entityId) return '';
+    const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${entityId}&props=sitelinks/urls&sitefilter=enwiki&format=json&origin=*`;
+    const response = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json' },
+    });
+    if (!response.ok) return '';
+    const data = await response.json() as {
+      entities: Record<string, { sitelinks?: { enwiki?: { url: string } } }>;
+    };
+    return data.entities[entityId]?.sitelinks?.enwiki?.url || '';
+  } catch {
+    return '';
+  }
 }
 
 function pickPrimaryRelease(releases: MBReleaseStub[]): MBReleaseStub | undefined {
@@ -211,5 +247,7 @@ async function mapMBReleaseGroup(rg: MBReleaseGroupItem): Promise<Release> {
     barcode: '',
     disambiguation: rg.disambiguation || '',
     mbUrl: `https://musicbrainz.org/release-group/${rg.id}`,
+    discogsUrl: '',
+    wikipediaUrl: '',
   };
 }

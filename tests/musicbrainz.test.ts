@@ -65,6 +65,24 @@ const RELEASE_GROUP_WITH_RELEASES = {
   ],
 };
 
+const RELEASE_GROUP_WITH_URLS = {
+  ...RELEASE_GROUP_WITH_RELEASES,
+  relations: [
+    { type: 'discogs', 'target-type': 'url', url: { resource: 'https://www.discogs.com/master/14223' } },
+    { type: 'wikidata', 'target-type': 'url', url: { resource: 'https://www.wikidata.org/wiki/Q202996' } },
+  ],
+};
+
+const WIKIDATA_RESPONSE = {
+  entities: {
+    Q202996: {
+      sitelinks: {
+        enwiki: { url: 'https://en.wikipedia.org/wiki/OK_Computer' },
+      },
+    },
+  },
+};
+
 const RELEASE_DETAIL = {
   id: 'rel-001',
   title: 'OK Computer',
@@ -298,6 +316,40 @@ describe('getReleaseDetails', () => {
     expect(r.tracks).toHaveLength(2);
     expect(r.tracks[0].title).toBe('Disc 1 Track 1');
     expect(r.tracks[1].title).toBe('Disc 2 Track 1');
+  });
+
+  it('populates discogsUrl and wikipediaUrl from url-rels', async () => {
+    setupFetch({
+      '/release-group/rg-001': RELEASE_GROUP_WITH_URLS,
+      '/release/rel-001': RELEASE_DETAIL,
+      'wikidata.org': WIKIDATA_RESPONSE,
+    });
+
+    const r = await getReleaseDetails('rg-001');
+    expect(r.discogsUrl).toBe('https://www.discogs.com/master/14223');
+    expect(r.wikipediaUrl).toBe('https://en.wikipedia.org/wiki/OK_Computer');
+  });
+
+  it('leaves url fields empty when no url-rels present', async () => {
+    setupFetch({
+      '/release-group/rg-001': RELEASE_GROUP_WITH_RELEASES,
+      '/release/rel-001': RELEASE_DETAIL,
+    });
+
+    const r = await getReleaseDetails('rg-001');
+    expect(r.discogsUrl).toBe('');
+    expect(r.wikipediaUrl).toBe('');
+  });
+
+  it('leaves wikipediaUrl empty when Wikidata has no enwiki sitelink', async () => {
+    setupFetch({
+      '/release-group/rg-001': RELEASE_GROUP_WITH_URLS,
+      '/release/rel-001': RELEASE_DETAIL,
+      'wikidata.org': { entities: { Q202996: { sitelinks: {} } } },
+    });
+
+    const r = await getReleaseDetails('rg-001');
+    expect(r.wikipediaUrl).toBe('');
   });
 
   it('throws on API error', async () => {

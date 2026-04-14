@@ -54,6 +54,8 @@ export function replaceVariables(template: string, release: Release, userTags: s
     coverUrl: toYamlScalar(release.coverUrl),
     mbid: toYamlScalar(release.mbid),
     mbUrl: toYamlScalar(release.mbUrl),
+    discogsUrl: toYamlScalar(release.discogsUrl),
+    wikipediaUrl: toYamlScalar(release.wikipediaUrl),
     releaseGroupMbid: toYamlScalar(release.releaseGroupMbid),
     releaseType: toYamlScalar(release.releaseType),
     status: toYamlScalar(release.status),

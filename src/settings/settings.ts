@@ -33,6 +33,8 @@ disambiguation: {{disambiguation}}
 mbid: {{mbid}}
 artist-mbid: {{artistMbid}}
 link-musicbrainz: {{mbUrl}}
+link-discogs: {{discogsUrl}}
+link-wikipedia: {{wikipediaUrl}}
 ---
 
 ## Tracklist
@@ -156,6 +158,8 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       ['{{mbid}}', 'string', 'MusicBrainz release group ID'],
       ['{{releaseGroupMbid}}', 'string', 'MusicBrainz release group ID (alias for {{mbid}})'],
       ['{{mbUrl}}', 'string', 'MusicBrainz release group URL'],
+      ['{{discogsUrl}}', 'string', 'Discogs master release URL'],
+      ['{{wikipediaUrl}}', 'string', 'Wikipedia article URL'],
       ['{{releaseType}}', 'string', 'Release type (Album, Single, EP, etc.)'],
       ['{{disambiguation}}', 'string', 'Disambiguation comment'],
     ];

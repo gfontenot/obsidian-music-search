@@ -19,6 +19,8 @@ export interface Release {
   barcode: string;
   disambiguation: string;
   mbUrl: string;
+  discogsUrl: string;
+  wikipediaUrl: string;
 }
 
 export interface Track {
