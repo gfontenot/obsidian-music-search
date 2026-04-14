@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "CommonJS",
+    "target": "ES6",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "strictNullChecks": true,
+    "lib": ["ES6", "DOM"],
+    "paths": {
+      "@/*": ["src/*"],
+      "obsidian": ["./__mocks__/obsidian.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts", "__mocks__/**/*.ts"]
+}
