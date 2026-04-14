@@ -177,7 +177,7 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     // Example template
     containerEl.createEl('h3', { text: 'Default Template' });
     containerEl.createEl('p', {
-      text: 'When no template file is set, the plugin generates a note with YAML frontmatter matching a standard record-collecting format (artist, title, release-year, album-type, format, label, genres, album-art, etc.). Create your own template file and point to it above to fully customize the output.',
+      text: 'When no template file is set, the plugin generates a note with YAML frontmatter containing all available data and the full track list. Create your own template file and point to it above to fully customize the output.',
     });
   }
 }
