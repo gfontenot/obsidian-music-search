@@ -23,7 +23,7 @@ export const DEFAULT_NOTE_TEMPLATE = `---
 tags: {{tags}}
 artist: {{artist}}
 title: {{title}}
-genres:{{genres}}
+genres: {{genres}}
 album-art: {{coverUrl}}
 album-type: {{releaseType}}
 track-count: {{trackCount}}
