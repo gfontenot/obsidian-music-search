@@ -149,7 +149,33 @@ export function appendCustomFields(
 }
 
 export function makeFileName(template: string, release: Release): string {
-  const name = replaceVariables(template, release);
-  // Sanitize: remove illegal filename characters
+  const rawVars: Record<string, string> = {
+    title: release.title,
+    artist: release.artist,
+    artistMbid: release.artistMbid,
+    year: release.year,
+    date: release.date,
+    country: release.country,
+    label: release.label,
+    catalogNumber: release.catalogNumber,
+    format: release.format,
+    releaseType: release.releaseType,
+    status: release.status,
+    barcode: release.barcode,
+    disambiguation: release.disambiguation,
+    mbid: release.mbid,
+    releaseGroupMbid: release.releaseGroupMbid,
+  };
+
+  const now = new Date();
+  const name = template.replace(/\{\{([^}]+)\}\}/g, (_match, key) => {
+    const trimmed = key.trim();
+    if (trimmed === 'DATE' || trimmed.startsWith('DATE:')) {
+      const fmt = trimmed === 'DATE' ? 'YYYY-MM-DD' : trimmed.slice(5);
+      return formatDate(now, fmt);
+    }
+    return rawVars[trimmed] ?? '';
+  });
+
   return name.replace(/[\\/:*?"<>|]/g, '').trim();
 }
