@@ -88,10 +88,12 @@ export default class MusicSearchPlugin extends Plugin {
       templateContent = appendCustomFields(DEFAULT_NOTE_TEMPLATE, this.settings.customFields);
     }
 
+    const fileName = makeFileName(this.settings.fileNameTemplate, release);
+
     // Download cover art locally if a folder is configured
     let releaseForNote = release;
     if (this.settings.artFolder && release.coverUrl) {
-      const localPath = await this.downloadCoverArt(release);
+      const localPath = await this.downloadCoverArt(release, fileName);
       if (localPath) {
         releaseForNote = { ...release, coverUrl: localPath };
       }
@@ -101,9 +103,6 @@ export default class MusicSearchPlugin extends Plugin {
       ? this.settings.tags.split(',').map(t => t.trim()).filter(Boolean)
       : [];
     const noteContent = replaceVariables(templateContent, releaseForNote, userTags);
-
-    // Determine file name
-    const fileName = makeFileName(this.settings.fileNameTemplate, release);
     
     // Determine folder
     const folder = this.settings.folder
@@ -142,13 +141,13 @@ export default class MusicSearchPlugin extends Plugin {
     }
   }
 
-  async downloadCoverArt(release: Release): Promise<string | null> {
+  async downloadCoverArt(release: Release, fileName: string): Promise<string | null> {
     try {
       const folder = normalizePath(this.settings.artFolder);
       await this.ensureFolderExists(folder);
 
       const ext = release.coverUrl.match(/\.(jpe?g|png|gif|webp)(\?|$)/i)?.[1] ?? 'jpg';
-      const filePath = normalizePath(`${folder}/${release.mbid}.${ext}`);
+      const filePath = normalizePath(`${folder}/${fileName}.${ext}`);
 
       // Reuse existing file if already downloaded
       const existing = this.app.vault.getAbstractFileByPath(filePath);
