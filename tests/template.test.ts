@@ -164,6 +164,23 @@ describe('replaceVariables', () => {
     });
   });
 
+  describe('coverEmbed variable', () => {
+    it('renders a wikilink embed for a local path', () => {
+      const r = makeRelease({ coverUrl: 'Assets/Radiohead - OK Computer.jpg' });
+      expect(replaceVariables('{{coverEmbed}}', r)).toBe('![[Assets/Radiohead - OK Computer.jpg]]');
+    });
+
+    it('renders a markdown image for a remote URL', () => {
+      const r = makeRelease({ coverUrl: 'https://example.com/cover.jpg' });
+      expect(replaceVariables('{{coverEmbed}}', r)).toBe('![](https://example.com/cover.jpg)');
+    });
+
+    it('returns empty string when coverUrl is empty', () => {
+      const r = makeRelease({ coverUrl: '' });
+      expect(replaceVariables('{{coverEmbed}}', r)).toBe('');
+    });
+  });
+
   describe('DATE variable', () => {
     it('substitutes {{DATE}} with current date in YYYY-MM-DD format', () => {
       const result = replaceVariables('{{DATE}}', makeRelease());

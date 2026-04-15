@@ -34,11 +34,19 @@ export function replaceVariables(template: string, release: Release, userTags: s
     : '[]';
   const genresInline = release.genres.join(', ');
 
+  // coverEmbed: Obsidian wikilink for local paths, markdown image for remote URLs
+  const coverEmbed = release.coverUrl
+    ? /^https?:\/\//.test(release.coverUrl)
+      ? `![](${release.coverUrl})`
+      : `![[${release.coverUrl}]]`
+    : '';
+
   const vars: Record<string, string> = {
     // YAML block values — not escaped, must be used as-is in the template
     tags: tagsYaml,
     genres: genresYaml,
     trackList,
+    coverEmbed,
     trackCount: String(release.trackCount),
     // Scalar values — escaped so they're safe in YAML frontmatter
     title: toYamlScalar(release.title),

@@ -42,7 +42,7 @@ link-musicbrainz: {{mbUrl}}
 link-discogs: {{discogsUrl}}
 link-wikipedia: {{wikipediaUrl}}
 ---
-
+{{coverEmbed}}
 ## Tracklist
 
 {{trackList}}
@@ -272,7 +272,8 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       ['{{trackList}}', 'string', 'Formatted tracklist (use in note body, not frontmatter)'],
       ['{{genres}}', 'string[]', 'Genres as a YAML list'],
       ['{{genresInline}}', 'string', 'Genres as a comma-separated string'],
-      ['{{coverUrl}}', 'string', 'Cover art URL'],
+      ['{{coverUrl}}', 'string', 'Cover art URL (or local vault path if art folder is set)'],
+      ['{{coverEmbed}}', 'string', 'Embedded cover art — ![[path]] for local files, ![](url) for remote. Use in the note body, not frontmatter.'],
       ['{{mbid}}', 'string', 'MusicBrainz release group ID'],
       ['{{releaseGroupMbid}}', 'string', 'MusicBrainz release group ID (alias for {{mbid}})'],
       ['{{mbUrl}}', 'string', 'MusicBrainz release group URL'],
