@@ -78,7 +78,7 @@ export default class MusicSearchPlugin extends Plugin {
           const loading = new LoadingProgressModal(this.app, 'Fetching release details…');
           loading.open();
           try {
-            const release = await getReleaseDetails(selected.mbid);
+            const release = await getReleaseDetails(selected.mbid, selected.coverUrl);
             await this.createNote(release);
           } catch (err) {
             new Notice(`Failed to fetch release details: ${err.message}`);

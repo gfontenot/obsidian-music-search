@@ -116,7 +116,7 @@ export async function searchReleases(query: string): Promise<Release[]> {
   );
 }
 
-export async function getReleaseDetails(releaseGroupMbid: string): Promise<Release> {
+export async function getReleaseDetails(releaseGroupMbid: string, existingCoverUrl = ''): Promise<Release> {
   const url = `${MB_API_BASE}/release-group/${releaseGroupMbid}?fmt=json&inc=artist-credits+releases+genres+tags+url-rels`;
   const data = await mbFetch(url) as MBReleaseGroupItem;
 
@@ -153,7 +153,7 @@ export async function getReleaseDetails(releaseGroupMbid: string): Promise<Relea
   const wikidataUrl = extractUrlRelation(relations, 'wikidata');
   const wikipediaUrl = wikidataUrl ? await getWikipediaUrl(wikidataUrl) : '';
 
-  const release = await mapMBReleaseGroup(data);
+  const release = await mapMBReleaseGroup(data, existingCoverUrl);
   return { ...release, tracks, trackCount: trackCount || release.trackCount, discogsUrl, wikipediaUrl };
 }
 
@@ -208,7 +208,7 @@ async function getCoverArtUrl(mbid: string, type: 'release' | 'release-group'): 
   return '';
 }
 
-async function mapMBReleaseGroup(rg: MBReleaseGroupItem): Promise<Release> {
+async function mapMBReleaseGroup(rg: MBReleaseGroupItem, existingCoverUrl = ''): Promise<Release> {
   const artistCredit = rg['artist-credit'] || [];
   const artist = artistCredit
     .map(ac => (ac.name || ac.artist?.name || '') + (ac.joinphrase || ''))
@@ -237,8 +237,8 @@ async function mapMBReleaseGroup(rg: MBReleaseGroupItem): Promise<Release> {
   const date = rg['first-release-date'] || '';
   const year = date ? date.substring(0, 4) : '';
 
-  let coverUrl = '';
-  if (rg.id) {
+  let coverUrl = existingCoverUrl;
+  if (!coverUrl && rg.id) {
     coverUrl = await getCoverArtUrl(rg.id, 'release-group');
   }
 

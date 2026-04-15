@@ -299,6 +299,7 @@ describe('appendCustomFields', () => {
     const result = appendCustomFields(frontmatterTemplate, [{ name: 'release-year', value: '{{year}}' }]);
     expect(result).toContain('release-year: {{year}}');
   });
+
 });
 
 describe('getTemplateContents', () => {

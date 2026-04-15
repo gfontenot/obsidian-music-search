@@ -298,6 +298,19 @@ describe('getReleaseDetails', () => {
     expect(r.tracks).toHaveLength(2);
   });
 
+  it('uses existingCoverUrl and skips Cover Art Archive fetch', async () => {
+    setupFetch({
+      '/release-group/rg-001': RELEASE_GROUP_WITH_RELEASES,
+      '/release/rel-001': RELEASE_DETAIL,
+    });
+
+    const r = await getReleaseDetails('rg-001', 'https://example.com/already-fetched.jpg');
+    expect(r.coverUrl).toBe('https://example.com/already-fetched.jpg');
+
+    const calls: string[] = mockFetch.mock.calls.map((c: [string]) => c[0]);
+    expect(calls.every((u: string) => !u.includes('coverartarchive'))).toBe(true);
+  });
+
   it('returns no tracks when release group has no releases', async () => {
     const rgNoReleases = { ...RELEASE_GROUP, releases: [] };
     setupFetch({ '/release-group/rg-001': rgNoReleases });
