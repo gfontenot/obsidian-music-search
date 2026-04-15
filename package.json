@@ -15,7 +15,7 @@
     "musicbrainz"
   ],
   "author": "",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "^16.11.6",
