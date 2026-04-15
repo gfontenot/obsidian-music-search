@@ -155,11 +155,12 @@ describe('replaceVariables', () => {
       expect(replaceVariables('{{trackCount}}', r)).toBe('12');
     });
 
-    it('does not quote YAML block variables (genres, tags)', () => {
-      const r = makeRelease({ genres: ['rock: hard', 'pop: soft'] });
+    it('quotes genre list items that contain special characters', () => {
+      const r = makeRelease({ genres: ['rock: hard', 'pop & soul', 'indie'] });
       const result = replaceVariables('{{genres}}', r);
-      expect(result).toMatch(/^  - rock: hard/m);
-      expect(result).not.toMatch(/^"/);
+      expect(result).toContain('  - "rock: hard"');
+      expect(result).toContain('  - "pop & soul"');
+      expect(result).toContain('  - indie');
     });
   });
 

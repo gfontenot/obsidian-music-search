@@ -25,12 +25,12 @@ export function replaceVariables(template: string, release: Release, userTags: s
 
   // Build tags as YAML list
   const tagsYaml = userTags.length > 0
-    ? '\n' + userTags.map(t => `  - ${t}`).join('\n')
+    ? '\n' + userTags.map(t => `  - ${toYamlScalar(t)}`).join('\n')
     : '[]';
 
   // Build genres as YAML list or comma-separated
   const genresYaml = release.genres.length > 0
-    ? '\n' + release.genres.map(g => `  - ${g}`).join('\n')
+    ? '\n' + release.genres.map(g => `  - ${toYamlScalar(g)}`).join('\n')
     : '[]';
   const genresInline = release.genres.join(', ');
 
