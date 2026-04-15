@@ -50,36 +50,15 @@ export class ReleaseSuggestModal extends FuzzySuggestModal<Release> {
       const img = imgWrapper.createEl('img');
       img.src = release.coverUrl;
       img.alt = release.title;
-      img.style.width = '48px';
-      img.style.height = '48px';
-      img.style.objectFit = 'cover';
-      img.style.borderRadius = '4px';
-      img.style.flexShrink = '0';
     } else if (this.showCovers) {
-      // Placeholder when no cover
-      const placeholder = wrapper.createDiv({ cls: 'music-search-cover-placeholder' });
-      placeholder.style.width = '48px';
-      placeholder.style.height = '48px';
-      placeholder.style.borderRadius = '4px';
-      placeholder.style.backgroundColor = 'var(--background-modifier-border)';
-      placeholder.style.display = 'flex';
-      placeholder.style.alignItems = 'center';
-      placeholder.style.justifyContent = 'center';
-      placeholder.style.fontSize = '20px';
-      placeholder.style.flexShrink = '0';
-      placeholder.setText('🎵');
+      wrapper.createDiv({ cls: 'music-search-cover-placeholder', text: '🎵' });
     }
 
     const info = wrapper.createDiv({ cls: 'music-search-info' });
 
-    const titleLine = info.createDiv({ cls: 'music-search-title' });
-    titleLine.style.fontWeight = '600';
-    titleLine.style.marginBottom = '2px';
-    titleLine.setText(`${release.artist} – ${release.title}`);
+    info.createDiv({ cls: 'music-search-title', text: `${release.artist} – ${release.title}` });
 
     const meta = info.createDiv({ cls: 'music-search-meta' });
-    meta.style.fontSize = '12px';
-    meta.style.color = 'var(--text-muted)';
 
     const metaParts: string[] = [];
     if (release.year) metaParts.push(release.year);
