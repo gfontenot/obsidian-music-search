@@ -18,7 +18,7 @@ import { Release, Track, formatDuration } from '../models/release.model';
 
 const MB_API_BASE = 'https://musicbrainz.org/ws/2';
 const COVER_ART_BASE = 'https://coverartarchive.org';
-const USER_AGENT = 'ObsidianMusicSearch/1.0.0 (https://github.com/your-username/obsidian-music-search)';
+const USER_AGENT = 'ObsidianMusicSearch/1.0.0 (https://codeberg.org/gfontenot/obsidian-music-search)';
 
 interface MBReleaseGroupSearchResult {
   'release-groups': MBReleaseGroupItem[];
