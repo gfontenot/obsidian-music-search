@@ -64,49 +64,41 @@ link-wikipedia: {{wikipediaUrl}}
 {{trackList}}
 `;
 
-class FolderSuggest extends AbstractInputSuggest<TFolder> {
-  private onSelect: (value: string) => void;
-
-  constructor(app: App, inputEl: HTMLInputElement, onSelect: (value: string) => void) {
+abstract class PathSuggest<T extends TFile | TFolder> extends AbstractInputSuggest<T> {
+  constructor(
+    app: App,
+    inputEl: HTMLInputElement,
+    private onSelect: (value: string) => void,
+  ) {
     super(app, inputEl);
-    this.onSelect = onSelect;
   }
 
+  abstract getSuggestions(query: string): T[];
+
+  renderSuggestion(item: T, el: HTMLElement) {
+    el.setText(item.path);
+  }
+
+  selectSuggestion(item: T) {
+    this.setValue(item.path);
+    this.onSelect(item.path);
+    this.close();
+  }
+}
+
+class FolderSuggest extends PathSuggest<TFolder> {
   getSuggestions(query: string): TFolder[] {
     return this.app.vault.getAllFolders(false)
       .filter(f => f.path.toLowerCase().includes(query.toLowerCase()))
       .slice(0, 50);
   }
-  renderSuggestion(folder: TFolder, el: HTMLElement) {
-    el.setText(folder.path);
-  }
-  selectSuggestion(folder: TFolder) {
-    this.setValue(folder.path);
-    this.onSelect(folder.path);
-    this.close();
-  }
 }
 
-class FileSuggest extends AbstractInputSuggest<TFile> {
-  private onSelect: (value: string) => void;
-
-  constructor(app: App, inputEl: HTMLInputElement, onSelect: (value: string) => void) {
-    super(app, inputEl);
-    this.onSelect = onSelect;
-  }
-
+class FileSuggest extends PathSuggest<TFile> {
   getSuggestions(query: string): TFile[] {
     return this.app.vault.getMarkdownFiles()
       .filter(f => f.path.toLowerCase().includes(query.toLowerCase()))
       .slice(0, 50);
-  }
-  renderSuggestion(file: TFile, el: HTMLElement) {
-    el.setText(file.path);
-  }
-  selectSuggestion(file: TFile) {
-    this.setValue(file.path);
-    this.onSelect(file.path);
-    this.close();
   }
 }
 
