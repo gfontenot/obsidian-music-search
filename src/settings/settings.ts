@@ -7,6 +7,7 @@ export interface MusicSearchSettings {
   templateMode: 'custom-fields' | 'template-file';
   templateFile: string;
   customFields: { name: string; value: string }[];
+  artFolder: string;
   openNewNote: boolean;
   showCoverInSearch: boolean;
   tags: string;
@@ -18,6 +19,7 @@ export const DEFAULT_SETTINGS: MusicSearchSettings = {
   templateMode: 'custom-fields',
   templateFile: '',
   customFields: [],
+  artFolder: '',
   openNewNote: true,
   showCoverInSearch: true,
   tags: '',
@@ -212,6 +214,24 @@ export class MusicSearchSettingTab extends PluginSettingTab {
           this.plugin.settings.openNewNote = value;
           await this.plugin.saveSettings();
         }));
+
+    // Album art folder
+    new Setting(containerEl)
+      .setName('Album art folder')
+      .setDesc('Folder to save downloaded cover art. When set, {{coverUrl}} in templates resolves to the local vault path instead of a remote URL. Leave empty to keep remote URLs.')
+      .addText(text => {
+        new FolderSuggest(this.app, text.inputEl, async (value) => {
+          this.plugin.settings.artFolder = value.trim();
+          await this.plugin.saveSettings();
+        });
+        text
+          .setPlaceholder('e.g. Assets/Album Art')
+          .setValue(this.plugin.settings.artFolder)
+          .onChange(async (value) => {
+            this.plugin.settings.artFolder = value.trim();
+            await this.plugin.saveSettings();
+          });
+      });
 
     // Show cover art in search
     new Setting(containerEl)

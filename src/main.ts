@@ -88,10 +88,19 @@ export default class MusicSearchPlugin extends Plugin {
       templateContent = appendCustomFields(DEFAULT_NOTE_TEMPLATE, this.settings.customFields);
     }
 
+    // Download cover art locally if a folder is configured
+    let releaseForNote = release;
+    if (this.settings.artFolder && release.coverUrl) {
+      const localPath = await this.downloadCoverArt(release);
+      if (localPath) {
+        releaseForNote = { ...release, coverUrl: localPath };
+      }
+    }
+
     const userTags = this.settings.tags
       ? this.settings.tags.split(',').map(t => t.trim()).filter(Boolean)
       : [];
-    const noteContent = replaceVariables(templateContent, release, userTags);
+    const noteContent = replaceVariables(templateContent, releaseForNote, userTags);
 
     // Determine file name
     const fileName = makeFileName(this.settings.fileNameTemplate, release);
@@ -130,6 +139,27 @@ export default class MusicSearchPlugin extends Plugin {
       }
     } catch (err) {
       new Notice(`Failed to create note: ${err.message}`);
+    }
+  }
+
+  async downloadCoverArt(release: Release): Promise<string | null> {
+    try {
+      const folder = normalizePath(this.settings.artFolder);
+      await this.ensureFolderExists(folder);
+
+      const ext = release.coverUrl.match(/\.(jpe?g|png|gif|webp)(\?|$)/i)?.[1] ?? 'jpg';
+      const filePath = normalizePath(`${folder}/${release.mbid}.${ext}`);
+
+      // Reuse existing file if already downloaded
+      const existing = this.app.vault.getAbstractFileByPath(filePath);
+      if (existing instanceof TFile) return filePath;
+
+      const response = await fetch(release.coverUrl);
+      if (!response.ok) return null;
+      await this.app.vault.createBinary(filePath, await response.arrayBuffer());
+      return filePath;
+    } catch {
+      return null;
     }
   }
 

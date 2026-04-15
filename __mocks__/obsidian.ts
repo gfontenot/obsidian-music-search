@@ -2,6 +2,7 @@ export class Vault {
   getAbstractFileByPath(_path: string): TAbstractFile | null { return null; }
   read(_file: TFile): Promise<string> { return Promise.resolve(''); }
   create(_path: string, _content: string): Promise<TFile> { return Promise.resolve(new TFile('')); }
+  createBinary(_path: string, _data: ArrayBuffer): Promise<TFile> { return Promise.resolve(new TFile('')); }
   createFolder(_path: string): Promise<void> { return Promise.resolve(); }
 }
 
