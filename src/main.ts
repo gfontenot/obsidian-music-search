@@ -43,12 +43,9 @@ export default class MusicSearchPlugin extends Plugin {
     // Settings tab
     this.addSettingTab(new MusicSearchSettingTab(this.app, this));
 
-    console.log('Music Search plugin loaded');
   }
 
-  onunload() {
-    console.log('Music Search plugin unloaded');
-  }
+  onunload() {}
 
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
