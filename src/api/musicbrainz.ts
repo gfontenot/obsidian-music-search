@@ -189,9 +189,9 @@ function pickPrimaryRelease(releases: MBReleaseStub[]): MBReleaseStub | undefine
   })[0];
 }
 
-async function getCoverArtUrl(mbid: string, type: 'release' | 'release-group'): Promise<string> {
+async function getCoverArtUrl(mbid: string): Promise<string> {
   try {
-    const url = `${COVER_ART_BASE}/${type}/${mbid}`;
+    const url = `${COVER_ART_BASE}/release-group/${mbid}`;
     const response = await fetch(url, {
       headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json' },
     });
@@ -239,7 +239,7 @@ async function mapMBReleaseGroup(rg: MBReleaseGroupItem, existingCoverUrl = ''):
 
   let coverUrl = existingCoverUrl;
   if (!coverUrl && rg.id) {
-    coverUrl = await getCoverArtUrl(rg.id, 'release-group');
+    coverUrl = await getCoverArtUrl(rg.id);
   }
 
   return {
