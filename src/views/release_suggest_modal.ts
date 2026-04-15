@@ -96,21 +96,15 @@ export class ReleaseSuggestModal extends FuzzySuggestModal<Release> {
 }
 
 export class LoadingProgressModal extends Modal {
-  private messageEl: HTMLElement;
-
   constructor(app: App, private message: string) {
     super(app);
   }
 
   onOpen() {
     this.contentEl.empty();
-    this.messageEl = this.contentEl.createEl('p', { text: this.message });
-    this.messageEl.style.textAlign = 'center';
-    this.messageEl.style.padding = '16px 0';
-  }
-
-  setMessage(message: string) {
-    if (this.messageEl) this.messageEl.setText(message);
+    const el = this.contentEl.createEl('p', { text: this.message });
+    el.style.textAlign = 'center';
+    el.style.padding = '16px 0';
   }
 
   onClose() {
