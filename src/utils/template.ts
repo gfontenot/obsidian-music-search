@@ -88,7 +88,7 @@ export function replaceVariables(template: string, release: Release, userTags: s
   };
 
   const now = new Date();
-  let result = template.replace(/\{\{([^}]+)\}\}/g, (_match, key) => {
+  return template.replace(/\{\{([^}]+)\}\}/g, (_match, key) => {
     const trimmed = key.trim();
     if (trimmed === 'DATE' || trimmed.startsWith('DATE:')) {
       const fmt = trimmed === 'DATE' ? 'YYYY-MM-DD' : trimmed.slice(5);
@@ -96,8 +96,6 @@ export function replaceVariables(template: string, release: Release, userTags: s
     }
     return vars[trimmed] !== undefined ? vars[trimmed] : '';
   });
-
-  return result;
 }
 
 function formatDate(date: Date, format: string): string {
