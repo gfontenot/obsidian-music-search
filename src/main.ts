@@ -47,6 +47,10 @@ export default class MusicSearchPlugin extends Plugin {
 
   onunload() {}
 
+  loadData(): Promise<Partial<MusicSearchSettings>> {
+    return super.loadData() as Promise<Partial<MusicSearchSettings>>;
+  }
+
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
