@@ -114,7 +114,7 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl('h2', { text: 'Music search' });
+    new Setting(containerEl).setName('Music search').setHeading();
 
     // Note destination folder
     new Setting(containerEl)
