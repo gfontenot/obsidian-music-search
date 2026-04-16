@@ -1,7 +1,7 @@
 {
-  "id": "obsidian-music-search",
+  "id": "music-search",
   "name": "Music Search",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "minAppVersion": "1.12.7",
   "description": "Search for music releases and generate notes for them that include release metadata and links to MusicBrainz, Discogs, and Wikipedia.",
   "author": "Gordon Fontenot",
