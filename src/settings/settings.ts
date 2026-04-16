@@ -114,7 +114,7 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl('h2', { text: 'Music Search Settings' });
+    containerEl.createEl('h2', { text: 'Music search' });
 
     // Note destination folder
     new Setting(containerEl)
@@ -159,16 +159,13 @@ export class MusicSearchSettingTab extends PluginSettingTab {
         }));
 
     // Note template section (tabs: custom fields vs template file)
-    containerEl.createEl('h3', { text: 'Note Template' });
+    new Setting(containerEl).setName('Note template').setHeading();
     containerEl.createEl('p', {
       text: 'Choose one mode: add custom fields to the default template, or provide a full template file.',
       cls: 'setting-item-description',
     });
 
-    const tabRow = containerEl.createDiv();
-    tabRow.style.display = 'flex';
-    tabRow.style.gap = '8px';
-    tabRow.style.marginBottom = '12px';
+    const tabRow = containerEl.createDiv({ cls: 'music-search-tab-row' });
     const customFieldsTabBtn = tabRow.createEl('button', { text: 'Custom Fields' });
     const templateFileTabBtn = tabRow.createEl('button', { text: 'Template File' });
 
@@ -253,20 +250,13 @@ export class MusicSearchSettingTab extends PluginSettingTab {
         }));
 
     // Template variables reference
-    containerEl.createEl('h3', { text: 'Available Template Variables' });
+    new Setting(containerEl).setName('Available template variables').setHeading();
 
-    const varTable = containerEl.createEl('table');
-    varTable.style.width = '100%';
-    varTable.style.borderCollapse = 'collapse';
-    varTable.style.fontSize = '12px';
+    const varTable = containerEl.createEl('table', { cls: 'music-search-var-table' });
 
     const headers = varTable.createEl('tr');
     ['Variable', 'YAML type', 'Description'].forEach(h => {
-      const th = headers.createEl('th');
-      th.style.textAlign = 'left';
-      th.style.padding = '4px 8px';
-      th.style.borderBottom = '1px solid var(--background-modifier-border)';
-      th.setText(h);
+      headers.createEl('th', { text: h });
     });
 
     const variables: [string, string, string][] = [
@@ -294,23 +284,13 @@ export class MusicSearchSettingTab extends PluginSettingTab {
 
     for (const [variable, type, desc] of variables) {
       const row = varTable.createEl('tr');
-      const tdVar = row.createEl('td');
-      tdVar.style.padding = '4px 8px';
-      tdVar.style.fontFamily = 'monospace';
-      tdVar.style.color = 'var(--text-accent)';
-      tdVar.setText(variable);
-      const tdType = row.createEl('td');
-      tdType.style.padding = '4px 8px';
-      tdType.style.fontFamily = 'monospace';
-      tdType.style.color = 'var(--text-muted)';
-      tdType.setText(type);
-      const tdDesc = row.createEl('td');
-      tdDesc.style.padding = '4px 8px';
-      tdDesc.setText(desc);
+      row.createEl('td', { text: variable, cls: 'music-search-var-table-variable' });
+      row.createEl('td', { text: type, cls: 'music-search-var-table-type' });
+      row.createEl('td', { text: desc });
     }
 
     // Default template description
-    containerEl.createEl('h3', { text: 'Default Template' });
+    new Setting(containerEl).setName('Default template').setHeading();
     containerEl.createEl('p', {
       text: 'The default template generates a note with YAML frontmatter containing all available data and the full track list. Use Custom Fields to extend it, or switch to Template File for full control.',
     });

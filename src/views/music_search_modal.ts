@@ -29,7 +29,7 @@ export class MusicSearchModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl('h2', { text: '🎵 Search Music Releases' });
+    contentEl.createEl('h2', { text: '🎵 Search music releases' });
     contentEl.createEl('p', {
       text: 'Search by artist name, album title, or both. Uses the MusicBrainz database.',
       cls: 'setting-item-description',
@@ -47,18 +47,19 @@ export class MusicSearchModal extends Modal {
       searchBtn.setButtonText(loading ? 'Searching…' : 'Search');
     };
 
-    const doSubmit = () => {
+    const doSubmit = async () => {
       const q = this.query.trim();
       if (!q) return;
       errorEl.style.display = 'none';
       setLoading(true);
-      this.onSubmit(q)
-        .then(() => this.close())
-        .catch(err => {
-          setLoading(false);
-          errorEl.style.display = '';
-          errorEl.setText(err.message);
-        });
+      try {
+        await this.onSubmit(q);
+        this.close();
+      } catch (err) {
+        setLoading(false);
+        errorEl.style.display = '';
+        errorEl.setText(err.message);
+      }
     };
 
     new Setting(contentEl)

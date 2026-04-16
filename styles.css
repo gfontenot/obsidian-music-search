@@ -53,3 +53,43 @@
 .suggestion-item .music-search-suggestion-wrapper {
   min-height: 52px;
 }
+
+/* Settings tab row */
+.music-search-tab-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* Template variable reference table */
+.music-search-var-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.music-search-var-table th {
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.music-search-var-table td {
+  padding: 4px 8px;
+}
+
+.music-search-var-table-variable {
+  font-family: monospace;
+  color: var(--text-accent);
+}
+
+.music-search-var-table-type {
+  font-family: monospace;
+  color: var(--text-muted);
+}
+
+/* Loading modal */
+.music-search-loading-message {
+  text-align: center;
+  padding: 16px 0;
+}

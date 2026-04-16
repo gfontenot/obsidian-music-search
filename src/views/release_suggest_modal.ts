@@ -81,9 +81,7 @@ export class LoadingProgressModal extends Modal {
 
   onOpen() {
     this.contentEl.empty();
-    const el = this.contentEl.createEl('p', { text: this.message });
-    el.style.textAlign = 'center';
-    el.style.padding = '16px 0';
+    this.contentEl.createEl('p', { text: this.message, cls: 'music-search-loading-message' });
   }
 
   onClose() {
