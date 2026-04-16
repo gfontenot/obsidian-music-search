@@ -121,9 +121,9 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       .setName('Note destination folder')
       .setDesc('Where to save new music notes. Leave empty for vault root.')
       .addText(text => {
-        new FolderSuggest(this.app, text.inputEl, async (value) => {
+        new FolderSuggest(this.app, text.inputEl, (value) => {
           this.plugin.settings.folder = value.trim();
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
         });
         text
           .setPlaceholder('e.g. Music/Releases')
@@ -180,22 +180,22 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       templateFilePane.style.display = mode === 'template-file' ? '' : 'none';
     };
 
-    customFieldsTabBtn.addEventListener('click', async () => {
+    customFieldsTabBtn.addEventListener('click', () => {
       activateTab('custom-fields');
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
     });
-    templateFileTabBtn.addEventListener('click', async () => {
+    templateFileTabBtn.addEventListener('click', () => {
       activateTab('template-file');
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
     });
 
     new Setting(templateFilePane)
       .setName('Template file')
       .setDesc('Path to a template note in your vault. All available {{variables}} will be substituted.')
       .addText(text => {
-        new FileSuggest(this.app, text.inputEl, async (value) => {
+        new FileSuggest(this.app, text.inputEl, (value) => {
           this.plugin.settings.templateFile = value.trim();
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
         });
         text
           .setPlaceholder('e.g. Templates/Music Release Template.md')
@@ -225,9 +225,9 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       .setName('Album art folder')
       .setDesc('Folder to save downloaded cover art. When set, {{coverUrl}} in templates resolves to the local vault path instead of a remote URL. Leave empty to keep remote URLs.')
       .addText(text => {
-        new FolderSuggest(this.app, text.inputEl, async (value) => {
+        new FolderSuggest(this.app, text.inputEl, (value) => {
           this.plugin.settings.artFolder = value.trim();
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
         });
         text
           .setPlaceholder('e.g. Assets/Album Art')

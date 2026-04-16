@@ -55,7 +55,7 @@ export default class MusicSearchPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
-  async createNewReleaseNote() {
+  createNewReleaseNote() {
     new MusicSearchModal(this.app, async (query) => {
       let releases: Release[];
       try {
@@ -71,17 +71,19 @@ export default class MusicSearchPlugin extends Plugin {
       new ReleaseSuggestModal(
         this.app,
         releases,
-        async (selected) => {
-          const loading = new LoadingProgressModal(this.app, 'Fetching release details…');
-          loading.open();
-          try {
-            const release = await getReleaseDetails(selected.mbid, selected.coverUrl);
-            await this.createNote(release);
-          } catch (err) {
-            new Notice(`Failed to fetch release details: ${err.message}`);
-          } finally {
-            loading.close();
-          }
+        (selected) => {
+          void (async () => {
+            const loading = new LoadingProgressModal(this.app, 'Fetching release details…');
+            loading.open();
+            try {
+              const release = await getReleaseDetails(selected.mbid, selected.coverUrl);
+              await this.createNote(release);
+            } catch (err) {
+              new Notice(`Failed to fetch release details: ${err.message}`);
+            } finally {
+              loading.close();
+            }
+          })();
         },
         this.settings.showCoverInSearch,
       ).open();

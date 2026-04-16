@@ -73,7 +73,7 @@ export class MusicSearchModal extends Modal {
           .onChange(value => { this.query = value; });
 
         text.inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
-          if (e.key === 'Enter') doSubmit();
+          if (e.key === 'Enter') void doSubmit();
         });
 
         setTimeout(() => text.inputEl.focus(), 50);
