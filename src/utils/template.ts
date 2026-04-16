@@ -88,7 +88,7 @@ export function replaceVariables(template: string, release: Release, userTags: s
   };
 
   const now = new Date();
-  return template.replace(/\{\{([^}]+)\}\}/g, (_match, key) => {
+  return template.replace(/\{\{([^}]+)\}\}/g, (_match, key: string) => {
     const trimmed = key.trim();
     if (trimmed === 'DATE' || trimmed.startsWith('DATE:')) {
       const fmt = trimmed === 'DATE' ? 'YYYY-MM-DD' : trimmed.slice(5);
@@ -166,7 +166,7 @@ export function makeFileName(template: string, release: Release): string {
   };
 
   const now = new Date();
-  const name = template.replace(/\{\{([^}]+)\}\}/g, (_match, key) => {
+  const name = template.replace(/\{\{([^}]+)\}\}/g, (_match, key: string) => {
     const trimmed = key.trim();
     if (trimmed === 'DATE' || trimmed.startsWith('DATE:')) {
       const fmt = trimmed === 'DATE' ? 'YYYY-MM-DD' : trimmed.slice(5);
