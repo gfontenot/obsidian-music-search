@@ -24,7 +24,7 @@ import { replaceVariables, getTemplateContents, makeFileName, appendCustomFields
 import { errorMessage } from './utils/errors';
 
 export default class MusicSearchPlugin extends Plugin {
-  settings: MusicSearchSettings;
+  settings!: MusicSearchSettings;
 
   async onload() {
     await this.loadSettings();
