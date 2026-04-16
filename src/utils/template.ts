@@ -23,7 +23,7 @@ import { Release } from '../models/release.model';
 function toYamlScalar(value: string): string {
   if (!value) return value;
   const needsQuoting =
-    /[:#\[\]{},|>!%@`&*'"\n\r]/.test(value) ||
+    /[:#[{}\],|>!%@`&*'"\n\r]/.test(value) ||
     /^[-?~\s]/.test(value) ||
     /\s$/.test(value) ||
     /^(true|false|yes|no|on|off|null)$/i.test(value) ||
