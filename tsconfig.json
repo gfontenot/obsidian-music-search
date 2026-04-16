@@ -9,7 +9,8 @@
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
-    "lib": ["ES2020", "DOM"]
+    "lib": ["ES2020", "DOM"],
+    "types": ["jest", "node"]
   },
   "include": ["**/*.ts"]
 }
