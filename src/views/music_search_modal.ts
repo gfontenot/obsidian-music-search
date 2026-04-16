@@ -58,7 +58,7 @@ export class MusicSearchModal extends Modal {
       } catch (err) {
         setLoading(false);
         errorEl.show();
-        errorEl.setText(err.message);
+        errorEl.setText(err instanceof Error ? err.message : String(err));
       }
     };
 
@@ -76,7 +76,7 @@ export class MusicSearchModal extends Modal {
           if (e.key === 'Enter') void doSubmit();
         });
 
-        setTimeout(() => text.inputEl.focus(), 50);
+        activeWindow.setTimeout(() => text.inputEl.focus(), 50);
       });
 
     new Setting(contentEl)
