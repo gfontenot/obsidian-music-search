@@ -310,7 +310,7 @@ describe('getTemplateContents', () => {
   });
 
   it('returns file contents when file exists', async () => {
-    const mockFile = new TFile('Templates/Music.md') as any;
+    const mockFile = Object.assign(new TFile(), { path: 'Templates/Music.md' }) as any;
     const app = {
       vault: {
         getAbstractFileByPath: jest.fn().mockReturnValue(mockFile),
