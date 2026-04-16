@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import { requestUrl } from 'obsidian';
 import { Release, Track, formatDuration } from '../models/release.model';
 
 const MB_API_BASE = 'https://musicbrainz.org/ws/2';
@@ -91,18 +92,14 @@ interface MBTag {
 }
 
 async function mbFetch(url: string): Promise<unknown> {
-  const response = await fetch(url, {
+  const response = await requestUrl({
+    url,
     headers: {
       'User-Agent': USER_AGENT,
       'Accept': 'application/json',
     },
   });
-
-  if (!response.ok) {
-    throw new Error(`MusicBrainz API error: ${response.status} ${response.statusText}`);
-  }
-
-  return response.json();
+  return response.json;
 }
 
 export async function searchReleases(query: string): Promise<Release[]> {
@@ -166,11 +163,13 @@ async function getWikipediaUrl(wikidataUrl: string): Promise<string> {
     const entityId = wikidataUrl.split('/').pop();
     if (!entityId) return '';
     const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${entityId}&props=sitelinks/urls&sitefilter=enwiki&format=json&origin=*`;
-    const response = await fetch(url, {
+    const response = await requestUrl({
+      url,
       headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json' },
+      throw: false,
     });
-    if (!response.ok) return '';
-    const data = await response.json() as {
+    if (response.status < 200 || response.status >= 300) return '';
+    const data = response.json as {
       entities: Record<string, { sitelinks?: { enwiki?: { url: string } } }>;
     };
     return data.entities[entityId]?.sitelinks?.enwiki?.url || '';
@@ -192,11 +191,13 @@ function pickPrimaryRelease(releases: MBReleaseStub[]): MBReleaseStub | undefine
 async function getCoverArtUrl(mbid: string): Promise<string> {
   try {
     const url = `${COVER_ART_BASE}/release-group/${mbid}`;
-    const response = await fetch(url, {
+    const response = await requestUrl({
+      url,
       headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json' },
+      throw: false,
     });
-    if (response.ok) {
-      const data = await response.json() as { images: Array<{ front: boolean; image: string; thumbnails: { small: string; large: string } }> };
+    if (response.status >= 200 && response.status < 300) {
+      const data = response.json as { images: Array<{ front: boolean; image: string; thumbnails: { small: string; large: string } }> };
       const front = data.images?.find(img => img.front);
       if (front) {
         return front.thumbnails?.large || front.thumbnails?.small || front.image;

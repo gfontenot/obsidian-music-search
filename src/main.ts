@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { App, Notice, Plugin, TFile, TFolder, normalizePath } from 'obsidian';
+import { Notice, Plugin, TFile, TFolder, normalizePath, requestUrl } from 'obsidian';
 import { MusicSearchSettings, DEFAULT_SETTINGS, DEFAULT_NOTE_TEMPLATE, MusicSearchSettingTab } from './settings/settings';
 import { MusicSearchModal } from './views/music_search_modal';
 import { ReleaseSuggestModal, LoadingProgressModal } from './views/release_suggest_modal';
@@ -166,9 +166,9 @@ export default class MusicSearchPlugin extends Plugin {
       const existing = this.app.vault.getAbstractFileByPath(filePath);
       if (existing instanceof TFile) return filePath;
 
-      const response = await fetch(release.coverUrl);
-      if (!response.ok) return null;
-      await this.app.vault.createBinary(filePath, await response.arrayBuffer());
+      const response = await requestUrl({ url: release.coverUrl, throw: false });
+      if (response.status < 200 || response.status >= 300) return null;
+      await this.app.vault.createBinary(filePath, response.arrayBuffer);
       return filePath;
     } catch {
       return null;
