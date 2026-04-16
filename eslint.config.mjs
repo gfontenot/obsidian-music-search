@@ -10,5 +10,12 @@ export default defineConfig([
       parser: tsparser,
       parserOptions: { project: "./tsconfig.json" },
     },
+    rules: {
+      "obsidianmd/ui/sentence-case": ["error", {
+        enforceCamelCaseLower: true,
+        brands: ["MusicBrainz", "Cover Art Archive"],
+        ignoreRegex: ['"[A-Z]'],
+      }],
+    },
   },
 ]);

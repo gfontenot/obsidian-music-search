@@ -114,8 +114,6 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    new Setting(containerEl).setName('Music search').setHeading();
-
     // Note destination folder
     new Setting(containerEl)
       .setName('Note destination folder')
@@ -151,7 +149,7 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       .setName('Tags')
       .setDesc('Comma-separated tags to add to every note (e.g. "music, albums, vinyl").')
       .addText(text => text
-        .setPlaceholder('e.g. music, albums')
+        .setPlaceholder('Music, albums')
         .setValue(this.plugin.settings.tags)
         .onChange(async (value) => {
           this.plugin.settings.tags = value;
@@ -166,8 +164,8 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     });
 
     const tabRow = containerEl.createDiv({ cls: 'music-search-tab-row' });
-    const customFieldsTabBtn = tabRow.createEl('button', { text: 'Custom Fields' });
-    const templateFileTabBtn = tabRow.createEl('button', { text: 'Template File' });
+    const customFieldsTabBtn = tabRow.createEl('button', { text: 'Custom fields' });
+    const templateFileTabBtn = tabRow.createEl('button', { text: 'Template file' });
 
     const customFieldsPane = containerEl.createDiv();
     const templateFilePane = containerEl.createDiv();
@@ -292,7 +290,7 @@ export class MusicSearchSettingTab extends PluginSettingTab {
     // Default template description
     new Setting(containerEl).setName('Default template').setHeading();
     containerEl.createEl('p', {
-      text: 'The default template generates a note with YAML frontmatter containing all available data and the full track list. Use Custom Fields to extend it, or switch to Template File for full control.',
+      text: 'The default template generates a note with YAML frontmatter containing all available data and the full track list. Use custom fields to extend it, or switch to template file for full control.',
     });
   }
 
@@ -303,7 +301,7 @@ export class MusicSearchSettingTab extends PluginSettingTab {
       const field = this.plugin.settings.customFields[i];
       new Setting(container)
         .addText(name => name
-          .setPlaceholder('field-name')
+          .setPlaceholder('Field name')
           .setValue(field.name)
           .onChange(async (value) => {
             this.plugin.settings.customFields[i].name = value;

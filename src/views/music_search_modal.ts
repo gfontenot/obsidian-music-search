@@ -29,7 +29,7 @@ export class MusicSearchModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl('h2', { text: '🎵 Search music releases' });
+    contentEl.createEl('h2', { text: 'Search music releases' });
     contentEl.createEl('p', {
       text: 'Search by artist name, album title, or both. Uses the MusicBrainz database.',
       cls: 'setting-item-description',
