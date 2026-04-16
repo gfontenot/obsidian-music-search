@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import { App, ButtonComponent, Modal, Setting, TextComponent } from 'obsidian';
+import { errorMessage } from '../utils/errors';
 
 export class MusicSearchModal extends Modal {
   private query = '';
@@ -58,7 +59,7 @@ export class MusicSearchModal extends Modal {
       } catch (err) {
         setLoading(false);
         errorEl.show();
-        errorEl.setText(err instanceof Error ? err.message : String(err));
+        errorEl.setText(errorMessage(err));
       }
     };
 

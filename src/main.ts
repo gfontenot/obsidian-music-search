@@ -21,6 +21,7 @@ import { ReleaseSuggestModal, LoadingProgressModal } from './views/release_sugge
 import { searchReleases, getReleaseDetails } from './api/musicbrainz';
 import { Release } from './models/release.model';
 import { replaceVariables, getTemplateContents, makeFileName, appendCustomFields } from './utils/template';
+import { errorMessage } from './utils/errors';
 
 export default class MusicSearchPlugin extends Plugin {
   settings: MusicSearchSettings;
@@ -65,7 +66,7 @@ export default class MusicSearchPlugin extends Plugin {
       try {
         releases = await searchReleases(query);
       } catch (err) {
-        throw new Error(`Search failed: ${err.message}`);
+        throw new Error(`Search failed: ${errorMessage(err)}`);
       }
 
       if (releases.length === 0) {
@@ -83,7 +84,7 @@ export default class MusicSearchPlugin extends Plugin {
               const release = await getReleaseDetails(selected.mbid, selected.coverUrl);
               await this.createNote(release);
             } catch (err) {
-              new Notice(`Failed to fetch release details: ${err.message}`);
+              new Notice(`Failed to fetch release details: ${errorMessage(err)}`);
             } finally {
               loading.close();
             }
@@ -156,7 +157,7 @@ export default class MusicSearchPlugin extends Plugin {
         await this.app.workspace.getLeaf(false).openFile(file);
       }
     } catch (err) {
-      new Notice(`Failed to create note: ${err.message}`);
+      new Notice(`Failed to create note: ${errorMessage(err)}`);
     }
   }
 
