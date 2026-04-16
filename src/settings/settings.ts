@@ -68,7 +68,7 @@ abstract class PathSuggest<T extends TFile | TFolder> extends AbstractInputSugge
   constructor(
     app: App,
     inputEl: HTMLInputElement,
-    private onSelect: (value: string) => void,
+    private handleSelect: (value: string) => void,
   ) {
     super(app, inputEl);
   }
@@ -81,7 +81,7 @@ abstract class PathSuggest<T extends TFile | TFolder> extends AbstractInputSugge
 
   selectSuggestion(item: T) {
     this.setValue(item.path);
-    this.onSelect(item.path);
+    this.handleSelect(item.path);
     this.close();
   }
 }
