@@ -39,7 +39,7 @@ export class MusicSearchModal extends Modal {
     let searchBtn: ButtonComponent;
 
     const errorEl = contentEl.createEl('p', { cls: 'mod-warning' });
-    errorEl.style.display = 'none';
+    errorEl.hide();
 
     const setLoading = (loading: boolean) => {
       searchText.setDisabled(loading);
@@ -50,14 +50,14 @@ export class MusicSearchModal extends Modal {
     const doSubmit = async () => {
       const q = this.query.trim();
       if (!q) return;
-      errorEl.style.display = 'none';
+      errorEl.hide();
       setLoading(true);
       try {
         await this.onSubmit(q);
         this.close();
       } catch (err) {
         setLoading(false);
-        errorEl.style.display = '';
+        errorEl.show();
         errorEl.setText(err.message);
       }
     };
