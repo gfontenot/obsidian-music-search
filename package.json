@@ -1,6 +1,6 @@
 {
   "name": "obsidian-music-search",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Search for music releases via MusicBrainz and create notes",
   "main": "main.js",
   "scripts": {
