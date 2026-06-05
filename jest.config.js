@@ -4,7 +4,7 @@ module.exports = {
     '^obsidian$': '<rootDir>/__mocks__/obsidian.ts',
   },
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.test.json' }],
+    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.test.json', diagnostics: false }],
   },
   testMatch: ['**/tests/**/*.test.ts'],
 };

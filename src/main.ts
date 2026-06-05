@@ -18,6 +18,7 @@ import { Notice, Plugin, TFile, TFolder, normalizePath, requestUrl } from 'obsid
 import { MusicSearchSettings, DEFAULT_SETTINGS, DEFAULT_NOTE_TEMPLATE, MusicSearchSettingTab } from './settings/settings';
 import { MusicSearchModal } from './views/music_search_modal';
 import { ReleaseSuggestModal, LoadingProgressModal } from './views/release_suggest_modal';
+import { DuplicateNoteModal, DuplicateResult } from './views/duplicate_note_modal';
 import { searchReleases, getReleaseDetails } from './api/musicbrainz';
 import { Release } from './models/release.model';
 import { replaceVariables, getTemplateContents, makeFileName, appendCustomFields } from './utils/template';
@@ -108,7 +109,7 @@ export default class MusicSearchPlugin extends Plugin {
       templateContent = appendCustomFields(DEFAULT_NOTE_TEMPLATE, this.settings.customFields);
     }
 
-    const fileName = makeFileName(this.settings.fileNameTemplate, release);
+    let fileName = makeFileName(this.settings.fileNameTemplate, release);
 
     // Download cover art locally if a folder is configured
     let releaseForNote = release;
@@ -122,7 +123,7 @@ export default class MusicSearchPlugin extends Plugin {
     const userTags = this.settings.tags
       ? this.settings.tags.split(',').map(t => t.trim()).filter(Boolean)
       : [];
-    const noteContent = replaceVariables(templateContent, releaseForNote, userTags);
+    let noteContent = replaceVariables(templateContent, releaseForNote, userTags);
 
     // Determine folder
     const folder = this.settings.folder
@@ -134,18 +135,42 @@ export default class MusicSearchPlugin extends Plugin {
       await this.ensureFolderExists(folder);
     }
 
-    const filePath = normalizePath(
+    let filePath = normalizePath(
       folder ? `${folder}/${fileName}.md` : `${fileName}.md`
     );
 
     // Check if file already exists
     const existing = this.app.vault.getAbstractFileByPath(filePath);
     if (existing instanceof TFile) {
-      new Notice(`Note already exists: ${filePath}`);
-      if (this.settings.openNewNote) {
-        await this.app.workspace.getLeaf(false).openFile(existing);
+      const result = await new Promise<DuplicateResult>(resolve => {
+        new DuplicateNoteModal(this.app, filePath, folder, resolve).open();
+      });
+
+      if (result.action === 'ignore') {
+        if (this.settings.openNewNote) {
+          await this.app.workspace.getLeaf(false).openFile(existing);
+        }
+        return;
       }
-      return;
+
+      if (result.action === 'replace') {
+        await this.app.vault.modify(existing, noteContent);
+        new Notice(`Replaced: ${fileName}`);
+        if (this.settings.openNewNote) {
+          await this.app.workspace.getLeaf(false).openFile(existing);
+        }
+        return;
+      }
+
+      // 'save-both': use user-chosen name, re-download art, regenerate content
+      fileName = result.name;
+      filePath = normalizePath(folder ? `${folder}/${fileName}.md` : `${fileName}.md`);
+
+      if (this.settings.artFolder && release.coverUrl) {
+        const localPath = await this.downloadCoverArt(release, fileName);
+        const newRelease = localPath ? { ...release, coverUrl: localPath } : release;
+        noteContent = replaceVariables(templateContent, newRelease, userTags);
+      }
     }
 
     // Create the file

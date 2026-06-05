@@ -4,6 +4,7 @@ export class Vault {
   create(_path: string, _content: string): Promise<TFile> { return Promise.resolve(new TFile('')); }
   createBinary(_path: string, _data: ArrayBuffer): Promise<TFile> { return Promise.resolve(new TFile('')); }
   createFolder(_path: string): Promise<void> { return Promise.resolve(); }
+  modify(_file: TFile, _content: string): Promise<void> { return Promise.resolve(); }
 }
 
 export class TAbstractFile {
@@ -13,6 +14,11 @@ export class TAbstractFile {
 
 export class App {
   vault: Vault = new Vault();
+  workspace = {
+    getLeaf: (_newLeaf?: boolean) => ({
+      openFile: (_file: TFile) => Promise.resolve(),
+    }),
+  };
 }
 
 export abstract class AbstractInputSuggest<T> {
@@ -30,7 +36,7 @@ export abstract class AbstractInputSuggest<T> {
 
 export class TFile {
   path: string;
-  constructor(path: string) {
+  constructor(path = '') {
     this.path = path;
   }
 }
@@ -44,14 +50,14 @@ export class TFolder {
 
 export class Plugin {
   app: App;
-  constructor(app: App) {
+  constructor(app: App, _manifest?: unknown) {
     this.app = app;
   }
   loadData() { return Promise.resolve({}); }
-  saveData() { return Promise.resolve(); }
-  addRibbonIcon() { return document.createElement('div'); }
-  addCommand() {}
-  addSettingTab() {}
+  saveData(_data: unknown) { return Promise.resolve(); }
+  addRibbonIcon(_icon: string, _title: string, _callback: () => unknown): HTMLElement { return {} as HTMLElement; }
+  addCommand(_command: unknown) {}
+  addSettingTab(_settingTab: unknown) {}
 }
 
 export class PluginSettingTab {
@@ -93,9 +99,13 @@ export class Setting {
 export class Notice {
   constructor(_message: string, _timeout?: number) {}
   hide() {}
-  noticeEl = document.createElement('div');
+  noticeEl = {} as HTMLElement;
 }
 
 export function normalizePath(path: string): string {
   return path.replace(/\\/g, '/').replace(/\/+/g, '/');
+}
+
+export function requestUrl(_options: unknown): Promise<{ status: number; arrayBuffer: ArrayBuffer }> {
+  return Promise.resolve({ status: 200, arrayBuffer: new ArrayBuffer(0) });
 }
