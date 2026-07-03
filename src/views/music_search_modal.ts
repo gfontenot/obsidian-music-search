@@ -15,13 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import { App, ButtonComponent, Modal, Setting, TextComponent } from 'obsidian';
+import { SearchQuery } from '../api/musicbrainz';
 import { errorMessage } from '../utils/errors';
 
 export class MusicSearchModal extends Modal {
-  private query = '';
-  private onSubmit: (query: string) => Promise<void>;
+  private artist = '';
+  private release = '';
+  private onSubmit: (query: SearchQuery) => Promise<void>;
+  private vpHandler?: () => void;
 
-  constructor(app: App, onSubmit: (query: string) => Promise<void>) {
+  constructor(app: App, onSubmit: (query: SearchQuery) => Promise<void>) {
     super(app);
     this.onSubmit = onSubmit;
   }
@@ -32,29 +35,30 @@ export class MusicSearchModal extends Modal {
 
     contentEl.createEl('h2', { text: 'Search music releases' });
     contentEl.createEl('p', {
-      text: 'Search by artist name, album title, or both. Uses the MusicBrainz database.',
+      text: 'Search by artist, release title, or both. Uses the MusicBrainz database.',
       cls: 'setting-item-description',
     });
 
-    let searchText: TextComponent;
+    let artistText: TextComponent;
+    let releaseText: TextComponent;
     let searchBtn: ButtonComponent;
 
     const errorEl = contentEl.createEl('p', { cls: 'mod-warning' });
     errorEl.hide();
 
     const setLoading = (loading: boolean) => {
-      searchText.setDisabled(loading);
+      artistText.setDisabled(loading);
+      releaseText.setDisabled(loading);
       searchBtn.setDisabled(loading);
       searchBtn.setButtonText(loading ? 'Searching…' : 'Search');
     };
 
     const doSubmit = async () => {
-      const q = this.query.trim();
-      if (!q) return;
+      if (!this.artist.trim() && !this.release.trim()) return;
       errorEl.hide();
       setLoading(true);
       try {
-        await this.onSubmit(q);
+        await this.onSubmit({ artist: this.artist, release: this.release });
         this.close();
       } catch (err) {
         setLoading(false);
@@ -64,20 +68,33 @@ export class MusicSearchModal extends Modal {
     };
 
     new Setting(contentEl)
-      .setName('Search query')
-      .setDesc('e.g. "Radiohead OK Computer" or "Burial Untrue"')
+      .setName('Artist')
       .addText(text => {
-        searchText = text;
+        artistText = text;
         text
-          .setPlaceholder('Artist, album, or both...')
-          .setValue(this.query)
-          .onChange(value => { this.query = value; });
+          .setPlaceholder('e.g. Radiohead')
+          .setValue(this.artist)
+          .onChange(value => { this.artist = value; });
 
         text.inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
           if (e.key === 'Enter') void doSubmit();
         });
 
         activeWindow.setTimeout(() => text.inputEl.focus(), 50);
+      });
+
+    new Setting(contentEl)
+      .setName('Release')
+      .addText(text => {
+        releaseText = text;
+        text
+          .setPlaceholder('e.g. OK Computer')
+          .setValue(this.release)
+          .onChange(value => { this.release = value; });
+
+        text.inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
+          if (e.key === 'Enter') void doSubmit();
+        });
       });
 
     new Setting(contentEl)
@@ -88,9 +105,25 @@ export class MusicSearchModal extends Modal {
       .addButton(btn => btn
         .setButtonText('Cancel')
         .onClick(() => this.close()));
+
+    const vv = window.visualViewport;
+    if (vv) {
+      this.vpHandler = () => {
+        this.containerEl.style.height = `${vv.height}px`;
+        const active = document.activeElement as HTMLElement | null;
+        if (active && this.contentEl.contains(active)) {
+          active.scrollIntoView({ block: 'nearest' });
+        }
+      };
+      vv.addEventListener('resize', this.vpHandler);
+    }
   }
 
   onClose() {
+    if (window.visualViewport && this.vpHandler) {
+      window.visualViewport.removeEventListener('resize', this.vpHandler);
+      this.vpHandler = undefined;
+    }
     this.contentEl.empty();
   }
 }

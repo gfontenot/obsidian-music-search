@@ -19,7 +19,7 @@ import { MusicSearchSettings, DEFAULT_SETTINGS, DEFAULT_NOTE_TEMPLATE, MusicSear
 import { MusicSearchModal } from './views/music_search_modal';
 import { ReleaseSuggestModal, LoadingProgressModal } from './views/release_suggest_modal';
 import { DuplicateNoteModal, DuplicateResult } from './views/duplicate_note_modal';
-import { searchReleases, getReleaseDetails } from './api/musicbrainz';
+import { searchReleases, getReleaseDetails, SearchQuery } from './api/musicbrainz';
 import { Release } from './models/release.model';
 import { replaceVariables, getTemplateContents, makeFileName, appendCustomFields } from './utils/template';
 import { errorMessage } from './utils/errors';
@@ -62,7 +62,7 @@ export default class MusicSearchPlugin extends Plugin {
   }
 
   createNewReleaseNote() {
-    new MusicSearchModal(this.app, async (query) => {
+    new MusicSearchModal(this.app, async (query: SearchQuery) => {
       let releases: Release[];
       try {
         releases = await searchReleases(query);

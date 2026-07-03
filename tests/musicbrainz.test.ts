@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { searchReleases, getReleaseDetails } from '../src/api/musicbrainz';
+import { searchReleases, getReleaseDetails, SearchQuery } from '../src/api/musicbrainz';
+
+const q = (artist: string, release = ''): SearchQuery => ({ artist, release });
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
@@ -125,7 +127,7 @@ describe('searchReleases', () => {
       '/release-group': { 'release-groups': [RELEASE_GROUP], count: 1, offset: 0 },
     });
 
-    const results = await searchReleases('Radiohead OK Computer');
+    const results = await searchReleases(q('Radiohead', 'OK Computer'));
     expect(results).toHaveLength(1);
     const r = results[0];
     expect(r.mbid).toBe('rg-001');
@@ -144,7 +146,7 @@ describe('searchReleases', () => {
       '/release-group': { 'release-groups': [RELEASE_GROUP], count: 1, offset: 0 },
     });
 
-    const [r] = await searchReleases('Radiohead');
+    const [r] = await searchReleases(q('Radiohead'));
     // alternative rock: 15, art rock: 8 → alternative rock first
     expect(r.genres[0]).toBe('alternative rock');
     expect(r.genres[1]).toBe('art rock');
@@ -160,7 +162,7 @@ describe('searchReleases', () => {
       '/release-group': { 'release-groups': [rgWithSecondary], count: 1, offset: 0 },
     });
 
-    const [r] = await searchReleases('test');
+    const [r] = await searchReleases(q('test'));
     expect(r.releaseType).toBe('Album + Compilation');
   });
 
@@ -169,7 +171,7 @@ describe('searchReleases', () => {
       '/release-group': { 'release-groups': [], count: 0, offset: 0 },
     });
 
-    const results = await searchReleases('xyzzy');
+    const results = await searchReleases(q('xyzzy'));
     expect(results).toHaveLength(0);
   });
 
@@ -179,7 +181,7 @@ describe('searchReleases', () => {
       '/release-group': { 'release-groups': [rgNoArtist], count: 1, offset: 0 },
     });
 
-    const [r] = await searchReleases('test');
+    const [r] = await searchReleases(q('test'));
     expect(r.artist).toBe('Unknown Artist');
     expect(r.artistMbid).toBe('');
   });
@@ -196,7 +198,7 @@ describe('searchReleases', () => {
       '/release-group': { 'release-groups': [rgMultiArtist], count: 1, offset: 0 },
     });
 
-    const [r] = await searchReleases('test');
+    const [r] = await searchReleases(q('test'));
     expect(r.artist).toBe('Artist A & Artist B');
   });
 
@@ -219,7 +221,7 @@ describe('searchReleases', () => {
       return Promise.resolve({ ok: false });
     });
 
-    const [r] = await searchReleases('Radiohead');
+    const [r] = await searchReleases(q('Radiohead'));
     expect(r.coverUrl).toBe('https://example.com/large.jpg');
   });
 
@@ -228,13 +230,13 @@ describe('searchReleases', () => {
       '/release-group': { 'release-groups': [RELEASE_GROUP], count: 1, offset: 0 },
     });
 
-    const [r] = await searchReleases('Radiohead');
+    const [r] = await searchReleases(q('Radiohead'));
     expect(r.coverUrl).toBe('');
   });
 
   it('throws on API error', async () => {
     mockFetch.mockResolvedValue({ ok: false, status: 503, statusText: 'Service Unavailable' });
-    await expect(searchReleases('test')).rejects.toThrow('MusicBrainz API error: 503');
+    await expect(searchReleases(q('test'))).rejects.toThrow('MusicBrainz API error: 503');
   });
 });
 

@@ -21,6 +21,11 @@ const MB_API_BASE = 'https://musicbrainz.org/ws/2';
 const COVER_ART_BASE = 'https://coverartarchive.org';
 const USER_AGENT = 'ObsidianMusicSearch/1.0.0 (https://codeberg.org/gfontenot/obsidian-music-search)';
 
+export interface SearchQuery {
+  artist: string;
+  release: string;
+}
+
 interface MBReleaseGroupSearchResult {
   'release-groups': MBReleaseGroupItem[];
   count: number;
@@ -106,8 +111,15 @@ async function mbFetch(url: string): Promise<unknown> {
   return response.json;
 }
 
-export async function searchReleases(query: string): Promise<Release[]> {
-  const encoded = encodeURIComponent(query);
+function buildLuceneQuery(query: SearchQuery): string {
+  const parts: string[] = [];
+  if (query.artist.trim()) parts.push(`artist:"${query.artist.trim()}"`);
+  if (query.release.trim()) parts.push(`releasegroup:"${query.release.trim()}"`);
+  return parts.join(' AND ');
+}
+
+export async function searchReleases(query: SearchQuery): Promise<Release[]> {
+  const encoded = encodeURIComponent(buildLuceneQuery(query));
   const url = `${MB_API_BASE}/release-group?query=${encoded}&limit=25&fmt=json&inc=artist-credits+genres`;
 
   const data = await mbFetch(url) as MBReleaseGroupSearchResult;
