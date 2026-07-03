@@ -106,6 +106,12 @@ export function normalizePath(path: string): string {
   return path.replace(/\\/g, '/').replace(/\/+/g, '/');
 }
 
-export function requestUrl(_options: unknown): Promise<{ status: number; arrayBuffer: ArrayBuffer }> {
-  return Promise.resolve({ status: 200, arrayBuffer: new ArrayBuffer(0) });
+export async function requestUrl(options: unknown): Promise<{ status: number; json: unknown; arrayBuffer: ArrayBuffer }> {
+  const url = typeof options === 'string' ? options : (options as { url: string }).url;
+  const headers = typeof options === 'string' ? undefined : (options as { headers?: Record<string, string> }).headers;
+  const response = await fetch(url, { headers });
+  const status = response.status ?? (response.ok !== false ? 200 : 400);
+  let json: unknown;
+  try { json = await response.json(); } catch { json = undefined; }
+  return { status, json, arrayBuffer: new ArrayBuffer(0) };
 }

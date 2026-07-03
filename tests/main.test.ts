@@ -18,6 +18,19 @@ import { TFile } from 'obsidian';
 import { Release } from '../src/models/release.model';
 import { DuplicateResult } from '../src/views/duplicate_note_modal';
 
+global.fetch = jest.fn().mockResolvedValue({
+  ok: true,
+  status: 200,
+  json: () => Promise.resolve({}),
+  arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+}) as typeof fetch;
+
+function makeTFile(path: string): TFile {
+  const f = new TFile();
+  f.path = path;
+  return f;
+}
+
 jest.mock('../src/views/duplicate_note_modal', () => ({
   DuplicateNoteModal: jest.fn().mockImplementation(
     (_app: unknown, _filePath: string, _folder: string, onChoose: (result: DuplicateResult) => void) => ({
@@ -61,7 +74,7 @@ function makeApp(overrides: Record<string, unknown> = {}) {
   return {
     vault: {
       getAbstractFileByPath: jest.fn().mockReturnValue(null),
-      create: jest.fn().mockResolvedValue(new TFile('Radiohead - OK Computer.md')),
+      create: jest.fn().mockResolvedValue(makeTFile('Radiohead - OK Computer.md')),
       modify: jest.fn().mockResolvedValue(undefined),
       createBinary: jest.fn().mockResolvedValue(undefined),
       createFolder: jest.fn().mockResolvedValue(undefined),
@@ -96,7 +109,7 @@ describe('createNote', () => {
   it('does not create or modify when duplicate action is ignore', async () => {
     const app = makeApp({
       vault: {
-        getAbstractFileByPath: jest.fn().mockReturnValue(new TFile('Radiohead - OK Computer.md')),
+        getAbstractFileByPath: jest.fn().mockReturnValue(makeTFile('Radiohead - OK Computer.md')),
         create: jest.fn(),
         modify: jest.fn(),
         createBinary: jest.fn(),
@@ -113,7 +126,7 @@ describe('createNote', () => {
   });
 
   it('calls vault.modify and not vault.create when duplicate action is replace', async () => {
-    const existingFile = new TFile('Radiohead - OK Computer.md');
+    const existingFile = makeTFile('Radiohead - OK Computer.md');
     const app = makeApp({
       vault: {
         getAbstractFileByPath: jest.fn().mockReturnValue(existingFile),
@@ -134,14 +147,14 @@ describe('createNote', () => {
   });
 
   it('creates a file using the user-provided name when save-both', async () => {
-    const existingFile = new TFile('Radiohead - OK Computer.md');
+    const existingFile = makeTFile('Radiohead - OK Computer.md');
     const app = makeApp({
       vault: {
         getAbstractFileByPath: jest.fn().mockImplementation((path: string) => {
           if (path === 'Radiohead - OK Computer.md') return existingFile;
           return null;
         }),
-        create: jest.fn().mockResolvedValue(new TFile('Radiohead - OK Computer (Deluxe).md')),
+        create: jest.fn().mockResolvedValue(makeTFile('Radiohead - OK Computer (Deluxe).md')),
         modify: jest.fn(),
         createBinary: jest.fn(),
         createFolder: jest.fn().mockResolvedValue(undefined),
@@ -159,8 +172,8 @@ describe('createNote', () => {
   });
 
   it('downloads cover art under the user-provided name when save-both and artFolder set', async () => {
-    const existingFile = new TFile('Radiohead - OK Computer.md');
-    const existingArt = new TFile('Art/Radiohead - OK Computer.jpg');
+    const existingFile = makeTFile('Radiohead - OK Computer.md');
+    const existingArt = makeTFile('Art/Radiohead - OK Computer.jpg');
     const app = makeApp({
       vault: {
         // Note exists; original art also exists (typical duplicate scenario)
@@ -169,7 +182,7 @@ describe('createNote', () => {
           if (path === 'Art/Radiohead - OK Computer.jpg') return existingArt;
           return null;
         }),
-        create: jest.fn().mockResolvedValue(new TFile('My Custom Name.md')),
+        create: jest.fn().mockResolvedValue(makeTFile('My Custom Name.md')),
         modify: jest.fn(),
         createBinary: jest.fn().mockResolvedValue(undefined),
         createFolder: jest.fn().mockResolvedValue(undefined),
@@ -192,14 +205,14 @@ describe('createNote', () => {
   });
 
   it('does not re-download art when artFolder is not configured', async () => {
-    const existingFile = new TFile('Radiohead - OK Computer.md');
+    const existingFile = makeTFile('Radiohead - OK Computer.md');
     const app = makeApp({
       vault: {
         getAbstractFileByPath: jest.fn().mockImplementation((path: string) => {
           if (path === 'Radiohead - OK Computer.md') return existingFile;
           return null;
         }),
-        create: jest.fn().mockResolvedValue(new TFile('My Custom Name.md')),
+        create: jest.fn().mockResolvedValue(makeTFile('My Custom Name.md')),
         modify: jest.fn(),
         createBinary: jest.fn(),
         createFolder: jest.fn().mockResolvedValue(undefined),

@@ -98,7 +98,11 @@ async function mbFetch(url: string): Promise<unknown> {
       'User-Agent': USER_AGENT,
       'Accept': 'application/json',
     },
+    throw: false,
   });
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(`MusicBrainz API error: ${response.status}`);
+  }
   return response.json;
 }
 
