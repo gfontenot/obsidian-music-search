@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import { requestUrl } from 'obsidian';
-import { Release, Track, formatDuration } from '../models/release.model';
+import { Edition, Release, Track, formatDuration } from '../models/release.model';
 
 const MB_API_BASE = 'https://musicbrainz.org/ws/2';
 const COVER_ART_BASE = 'https://coverartarchive.org';
@@ -61,6 +61,8 @@ interface MBReleaseStub {
   date?: string;
   status?: string;
   media?: MBMedium[];
+  country?: string;
+  disambiguation?: string;
 }
 
 interface MBArtistCredit {
@@ -129,13 +131,55 @@ export async function searchReleases(query: SearchQuery): Promise<Release[]> {
   );
 }
 
-export async function getReleaseDetails(releaseGroupMbid: string, existingCoverUrl = ''): Promise<Release> {
+function deriveFormat(media: MBMedium[]): string {
+  if (!media || media.length === 0) return 'Unknown';
+  const counts = new Map<string, number>();
+  for (const medium of media) {
+    const fmt = medium.format || 'Unknown';
+    counts.set(fmt, (counts.get(fmt) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([fmt, n]) => n === 1 ? fmt : `${n}× ${fmt}`)
+    .join(' + ');
+}
+
+export async function getEditions(releaseGroupMbid: string, groupCoverUrl = ''): Promise<Edition[]> {
+  const url = `${MB_API_BASE}/release-group/${releaseGroupMbid}?fmt=json&inc=releases+media`;
+  const data = await mbFetch(url) as MBReleaseGroupItem;
+  const releases = data.releases || [];
+
+  const mapped = await Promise.all(
+    releases.map(async (r): Promise<Edition> => {
+      const media = r.media || [];
+      const releaseCoverUrl = await getCoverArtUrl(r.id, 'release');
+      return {
+        mbid: r.id,
+        title: r.title,
+        date: r.date || '',
+        year: r.date ? r.date.substring(0, 4) : '',
+        status: r.status || '',
+        format: deriveFormat(media),
+        trackCount: media.reduce((sum, m) => sum + (m['track-count'] || 0), 0),
+        mediaCount: media.length,
+        country: r.country || '',
+        disambiguation: r.disambiguation || '',
+        coverUrl: releaseCoverUrl || groupCoverUrl,
+      };
+    })
+  );
+
+  return mapped.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+export async function getReleaseDetails(releaseGroupMbid: string, existingCoverUrl = '', selectedReleaseId?: string): Promise<Release> {
   const url = `${MB_API_BASE}/release-group/${releaseGroupMbid}?fmt=json&inc=artist-credits+releases+genres+tags+url-rels`;
   const data = await mbFetch(url) as MBReleaseGroupItem;
 
   // Find the primary release to get the tracklist
   const releases = data.releases || [];
-  const primaryRelease = pickPrimaryRelease(releases);
+  const primaryRelease = selectedReleaseId
+    ? (releases.find(r => r.id === selectedReleaseId) ?? pickPrimaryRelease(releases))
+    : pickPrimaryRelease(releases);
 
   let tracks: Track[] = [];
   let trackCount = 0;
@@ -166,7 +210,14 @@ export async function getReleaseDetails(releaseGroupMbid: string, existingCoverU
   const wikidataUrl = extractUrlRelation(relations, 'wikidata');
   const wikipediaUrl = wikidataUrl ? await getWikipediaUrl(wikidataUrl) : '';
 
-  const release = await mapMBReleaseGroup(data, existingCoverUrl);
+  // Try release-specific cover art first, fall back to release-group art
+  let coverUrl = existingCoverUrl;
+  if (selectedReleaseId) {
+    const releaseCoverUrl = await getCoverArtUrl(selectedReleaseId, 'release');
+    if (releaseCoverUrl) coverUrl = releaseCoverUrl;
+  }
+
+  const release = await mapMBReleaseGroup(data, coverUrl);
   return { ...release, tracks, trackCount: trackCount || release.trackCount, discogsUrl, wikipediaUrl };
 }
 
@@ -204,9 +255,9 @@ function pickPrimaryRelease(releases: MBReleaseStub[]): MBReleaseStub | undefine
   })[0];
 }
 
-async function getCoverArtUrl(mbid: string): Promise<string> {
+async function getCoverArtUrl(mbid: string, type: 'release-group' | 'release' = 'release-group'): Promise<string> {
   try {
-    const url = `${COVER_ART_BASE}/release-group/${mbid}`;
+    const url = `${COVER_ART_BASE}/${type}/${mbid}`;
     const response = await requestUrl({
       url,
       headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json' },

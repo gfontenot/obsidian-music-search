@@ -19,8 +19,9 @@ import { MusicSearchSettings, DEFAULT_SETTINGS, DEFAULT_NOTE_TEMPLATE, MusicSear
 import { MusicSearchModal } from './views/music_search_modal';
 import { ReleaseSuggestModal, LoadingProgressModal } from './views/release_suggest_modal';
 import { DuplicateNoteModal, DuplicateResult } from './views/duplicate_note_modal';
-import { searchReleases, getReleaseDetails, SearchQuery } from './api/musicbrainz';
-import { Release } from './models/release.model';
+import { searchReleases, getReleaseDetails, getEditions, SearchQuery } from './api/musicbrainz';
+import { Edition, Release } from './models/release.model';
+import { EditionSuggestModal } from './views/edition_suggest_modal';
 import { replaceVariables, getTemplateContents, makeFileName, appendCustomFields } from './utils/template';
 import { errorMessage } from './utils/errors';
 
@@ -78,18 +79,51 @@ export default class MusicSearchPlugin extends Plugin {
         this.app,
         releases,
         (selected) => {
-          void (async () => {
-            const loading = new LoadingProgressModal(this.app, 'Fetching release details…');
-            loading.open();
-            try {
-              const release = await getReleaseDetails(selected.mbid, selected.coverUrl);
-              await this.createNote(release);
-            } catch (err) {
-              new Notice(`Failed to fetch release details: ${errorMessage(err)}`);
-            } finally {
-              loading.close();
-            }
-          })();
+          const fetchAndCreate = (releaseId?: string, titleOverride?: string) => {
+            void (async () => {
+              const loading = new LoadingProgressModal(this.app, 'Fetching release details…');
+              loading.open();
+              try {
+                let release = await getReleaseDetails(selected.mbid, selected.coverUrl, releaseId);
+                if (titleOverride && titleOverride !== release.title) {
+                  release = { ...release, title: titleOverride };
+                }
+                await this.createNote(release);
+              } catch (err) {
+                new Notice(`Failed to fetch release details: ${errorMessage(err)}`);
+              } finally {
+                loading.close();
+              }
+            })();
+          };
+
+          if (this.settings.editionSelection) {
+            void (async () => {
+              const subLoading = new LoadingProgressModal(this.app, 'Fetching editions…');
+              subLoading.open();
+              let editions: Edition[];
+              try {
+                editions = await getEditions(selected.mbid, selected.coverUrl);
+              } catch (err) {
+                new Notice(`Failed to fetch editions: ${errorMessage(err)}`);
+                return;
+              } finally {
+                subLoading.close();
+              }
+
+              if (editions.length > 1) {
+                new EditionSuggestModal(this.app, editions, (chosen) => {
+                  fetchAndCreate(chosen.mbid, chosen.title);
+                }, this.settings.showCoverInSearch).open();
+              } else if (editions.length === 1) {
+                fetchAndCreate(editions[0].mbid, editions[0].title);
+              } else {
+                fetchAndCreate();
+              }
+            })();
+          } else {
+            fetchAndCreate();
+          }
         },
         this.settings.showCoverInSearch,
       ).open();

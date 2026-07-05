@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { searchReleases, getReleaseDetails, SearchQuery } from '../src/api/musicbrainz';
+import { searchReleases, getReleaseDetails, getEditions, SearchQuery } from '../src/api/musicbrainz';
 
 const q = (artist: string, release = ''): SearchQuery => ({ artist, release });
 
@@ -313,6 +313,39 @@ describe('getReleaseDetails', () => {
     expect(calls.every((u: string) => !u.includes('coverartarchive'))).toBe(true);
   });
 
+  it('fetches release-specific cover art when selectedReleaseId is provided', async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/release-group/rg-001') && !url.includes('coverartarchive')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(RELEASE_GROUP_WITH_RELEASES) });
+      }
+      if (url.includes('/release/rel-001') && !url.includes('coverartarchive')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(RELEASE_DETAIL) });
+      }
+      if (url.includes('coverartarchive.org/release/rel-001')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            images: [{ front: true, image: 'https://example.com/release-specific.jpg', thumbnails: { large: 'https://example.com/release-specific-large.jpg', small: '' } }],
+          }),
+        });
+      }
+      return Promise.resolve({ ok: false, status: 404 });
+    });
+
+    const r = await getReleaseDetails('rg-001', 'https://example.com/group-art.jpg', 'rel-001');
+    expect(r.coverUrl).toBe('https://example.com/release-specific-large.jpg');
+  });
+
+  it('falls back to existingCoverUrl when release-specific cover art is unavailable', async () => {
+    setupFetch({
+      '/release-group/rg-001': RELEASE_GROUP_WITH_RELEASES,
+      '/release/rel-001': RELEASE_DETAIL,
+    });
+
+    const r = await getReleaseDetails('rg-001', 'https://example.com/group-art.jpg', 'rel-001');
+    expect(r.coverUrl).toBe('https://example.com/group-art.jpg');
+  });
+
   it('returns no tracks when release group has no releases', async () => {
     const rgNoReleases = { ...RELEASE_GROUP, releases: [] };
     setupFetch({ '/release-group/rg-001': rgNoReleases });
@@ -383,8 +416,225 @@ describe('getReleaseDetails', () => {
     expect(r.wikipediaUrl).toBe('');
   });
 
+  it('uses selectedReleaseId when provided, bypassing pickPrimaryRelease', async () => {
+    const rel002Detail = {
+      id: 'rel-002',
+      title: 'OK Computer',
+      media: [{
+        format: 'CD',
+        'track-count': 1,
+        tracks: [{ number: '1', title: 'Specifically Chosen Track', length: 200000, position: 1 }],
+      }],
+    };
+    setupFetch({
+      '/release-group/rg-001': RELEASE_GROUP_WITH_RELEASES,
+      '/release/rel-002': rel002Detail,
+    });
+
+    const r = await getReleaseDetails('rg-001', '', 'rel-002');
+
+    const calls: string[] = mockFetch.mock.calls.map((c: [string]) => c[0]);
+    expect(calls.some(u => u.includes('/release/rel-002'))).toBe(true);
+    expect(calls.some(u => u.includes('/release/rel-001'))).toBe(false);
+    expect(r.tracks[0].title).toBe('Specifically Chosen Track');
+  });
+
+  it('falls back to pickPrimaryRelease when selectedReleaseId is not found in stubs', async () => {
+    setupFetch({
+      '/release-group/rg-001': RELEASE_GROUP_WITH_RELEASES,
+      '/release/rel-001': RELEASE_DETAIL,
+    });
+
+    const r = await getReleaseDetails('rg-001', '', 'rel-nonexistent');
+
+    const calls: string[] = mockFetch.mock.calls.map((c: [string]) => c[0]);
+    expect(calls.some(u => u.includes('/release/rel-001'))).toBe(true);
+    expect(r.tracks[0].title).toBe('Airbag');
+  });
+
   it('throws on API error', async () => {
     mockFetch.mockResolvedValue({ ok: false, status: 503, statusText: 'Service Unavailable' });
     await expect(getReleaseDetails('rg-001')).rejects.toThrow('MusicBrainz API error: 503');
+  });
+});
+
+// ─── getEditions ───────────────────────────────────────────────────────────
+
+const RELEASE_GROUP_WITH_MEDIA = {
+  ...RELEASE_GROUP,
+  releases: [
+    {
+      id: 'rel-001',
+      title: 'OK Computer',
+      date: '1997-05-21',
+      status: 'Official',
+      country: 'GB',
+      disambiguation: '',
+      media: [{ format: 'CD', 'track-count': 12 }],
+    },
+    {
+      id: 'rel-003',
+      title: 'OK Computer',
+      date: '1997-06-17',
+      status: 'Official',
+      country: 'US',
+      disambiguation: 'US pressing',
+      media: [{ format: 'CD', 'track-count': 12 }],
+    },
+  ],
+};
+
+describe('getEditions', () => {
+  it('returns mapped Edition array sorted by date ascending', async () => {
+    setupFetch({ '/release-group/rg-001': RELEASE_GROUP_WITH_MEDIA });
+
+    const results = await getEditions('rg-001');
+    expect(results).toHaveLength(2);
+    expect(results[0].mbid).toBe('rel-001');
+    expect(results[0].date).toBe('1997-05-21');
+    expect(results[0].year).toBe('1997');
+    expect(results[0].status).toBe('Official');
+    expect(results[0].format).toBe('CD');
+    expect(results[0].trackCount).toBe(12);
+    expect(results[0].mediaCount).toBe(1);
+    expect(results[0].country).toBe('GB');
+    expect(results[0].disambiguation).toBe('');
+    expect(results[1].mbid).toBe('rel-003');
+    expect(results[1].disambiguation).toBe('US pressing');
+  });
+
+  it('returns empty array when release group has no releases', async () => {
+    setupFetch({ '/release-group/rg-001': { ...RELEASE_GROUP, releases: [] } });
+
+    const results = await getEditions('rg-001');
+    expect(results).toHaveLength(0);
+  });
+
+  it('returns empty array when releases field is missing', async () => {
+    setupFetch({ '/release-group/rg-001': RELEASE_GROUP });
+
+    const results = await getEditions('rg-001');
+    expect(results).toHaveLength(0);
+  });
+
+  it('sorts releases with missing dates first (empty string sorts before any date)', async () => {
+    const rgWithMissingDate = {
+      ...RELEASE_GROUP,
+      releases: [
+        { id: 'rel-001', title: 'OK Computer', date: '1997-05-21', status: 'Official', media: [] },
+        { id: 'rel-nodate', title: 'OK Computer', status: 'Official', media: [] },
+      ],
+    };
+    setupFetch({ '/release-group/rg-001': rgWithMissingDate });
+
+    const results = await getEditions('rg-001');
+    expect(results[0].mbid).toBe('rel-nodate');
+    expect(results[1].mbid).toBe('rel-001');
+  });
+
+  it('uses release-specific cover art when available', async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/release-group/rg-001') && !url.includes('coverartarchive')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(RELEASE_GROUP_WITH_MEDIA) });
+      }
+      if (url.includes('coverartarchive.org/release/rel-001')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            images: [{ front: true, image: 'https://example.com/rel-001.jpg', thumbnails: { large: 'https://example.com/rel-001-large.jpg', small: '' } }],
+          }),
+        });
+      }
+      return Promise.resolve({ ok: false, status: 404 });
+    });
+
+    const results = await getEditions('rg-001', 'https://example.com/group.jpg');
+    expect(results[0].coverUrl).toBe('https://example.com/rel-001-large.jpg');
+  });
+
+  it('falls back to groupCoverUrl when release-specific art is unavailable', async () => {
+    setupFetch({ '/release-group/rg-001': RELEASE_GROUP_WITH_MEDIA });
+
+    const results = await getEditions('rg-001', 'https://example.com/group.jpg');
+    expect(results[0].coverUrl).toBe('https://example.com/group.jpg');
+  });
+
+  it('leaves coverUrl empty when no release art and no groupCoverUrl', async () => {
+    setupFetch({ '/release-group/rg-001': RELEASE_GROUP_WITH_MEDIA });
+
+    const results = await getEditions('rg-001');
+    expect(results[0].coverUrl).toBe('');
+  });
+
+  it('throws on API error', async () => {
+    mockFetch.mockResolvedValue({ ok: false, status: 503, statusText: 'Service Unavailable' });
+    await expect(getEditions('rg-001')).rejects.toThrow('MusicBrainz API error: 503');
+  });
+
+  describe('format derivation', () => {
+    function makeRgWithMedia(mediaArrays: Array<Array<{ format?: string; 'track-count': number }>>) {
+      return {
+        ...RELEASE_GROUP,
+        releases: mediaArrays.map((media, i) => ({
+          id: `rel-00${i + 1}`,
+          title: 'Test',
+          date: `2000-01-0${i + 1}`,
+          status: 'Official',
+          media,
+        })),
+      };
+    }
+
+    it('returns "CD" for a single CD medium', async () => {
+      setupFetch({ '/release-group/rg-001': makeRgWithMedia([[{ format: 'CD', 'track-count': 10 }]]) });
+      const [r] = await getEditions('rg-001');
+      expect(r.format).toBe('CD');
+    });
+
+    it('returns "2× Vinyl" for two vinyl media', async () => {
+      setupFetch({
+        '/release-group/rg-001': makeRgWithMedia([[
+          { format: 'Vinyl', 'track-count': 6 },
+          { format: 'Vinyl', 'track-count': 6 },
+        ]]),
+      });
+      const [r] = await getEditions('rg-001');
+      expect(r.format).toBe('2× Vinyl');
+    });
+
+    it('returns "Vinyl + CD" for mixed media types', async () => {
+      setupFetch({
+        '/release-group/rg-001': makeRgWithMedia([[
+          { format: 'Vinyl', 'track-count': 10 },
+          { format: 'CD', 'track-count': 10 },
+        ]]),
+      });
+      const [r] = await getEditions('rg-001');
+      expect(r.format).toBe('Vinyl + CD');
+    });
+
+    it('returns "Unknown" when format is missing on medium', async () => {
+      setupFetch({ '/release-group/rg-001': makeRgWithMedia([[{ 'track-count': 10 }]]) });
+      const [r] = await getEditions('rg-001');
+      expect(r.format).toBe('Unknown');
+    });
+
+    it('returns "Unknown" when media array is empty', async () => {
+      setupFetch({ '/release-group/rg-001': makeRgWithMedia([[]])  });
+      const [r] = await getEditions('rg-001');
+      expect(r.format).toBe('Unknown');
+    });
+
+    it('sums trackCount across all media', async () => {
+      setupFetch({
+        '/release-group/rg-001': makeRgWithMedia([[
+          { format: 'CD', 'track-count': 7 },
+          { format: 'CD', 'track-count': 5 },
+        ]]),
+      });
+      const [r] = await getEditions('rg-001');
+      expect(r.trackCount).toBe(12);
+      expect(r.mediaCount).toBe(2);
+    });
   });
 });

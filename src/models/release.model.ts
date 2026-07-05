@@ -46,6 +46,20 @@ export interface Track {
   durationMs: number;
 }
 
+export interface Edition {
+  mbid: string;
+  title: string;
+  date: string;
+  year: string;
+  status: string;
+  format: string;
+  trackCount: number;
+  mediaCount: number;
+  country: string;
+  disambiguation: string;
+  coverUrl: string;
+}
+
 export function formatDuration(ms: number): string {
   if (!ms) return '';
   const totalSeconds = Math.floor(ms / 1000);

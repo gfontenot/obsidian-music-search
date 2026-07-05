@@ -26,6 +26,7 @@ export interface MusicSearchSettings {
   artFolder: string;
   openNewNote: boolean;
   showCoverInSearch: boolean;
+  editionSelection: boolean;
   tags: string;
 }
 
@@ -38,6 +39,7 @@ export const DEFAULT_SETTINGS: MusicSearchSettings = {
   artFolder: '',
   openNewNote: true,
   showCoverInSearch: true,
+  editionSelection: true,
   tags: '',
 };
 
@@ -244,6 +246,17 @@ export class MusicSearchSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.showCoverInSearch)
         .onChange(async (value) => {
           this.plugin.settings.showCoverInSearch = value;
+          await this.plugin.saveSettings();
+        }));
+
+    // Edition selection
+    new Setting(containerEl)
+      .setName('Edition selection')
+      .setDesc('Show a second picker after selecting a release, listing all individual editions (CD, Vinyl, Digital, etc.) so you can choose the exact version. Disable to always use the earliest official edition.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.editionSelection)
+        .onChange(async (value) => {
+          this.plugin.settings.editionSelection = value;
           await this.plugin.saveSettings();
         }));
 
