@@ -157,7 +157,7 @@ export default class MusicSearchPlugin extends Plugin {
     const userTags = this.settings.tags
       ? this.settings.tags.split(',').map(t => t.trim()).filter(Boolean)
       : [];
-    let noteContent = replaceVariables(templateContent, releaseForNote, userTags);
+    let noteContent = replaceVariables(templateContent, releaseForNote, userTags, this.settings.wikiLinkArtist);
 
     // Determine folder
     const folder = this.settings.folder
@@ -203,7 +203,7 @@ export default class MusicSearchPlugin extends Plugin {
       if (this.settings.artFolder && release.coverUrl) {
         const localPath = await this.downloadCoverArt(release, fileName);
         const newRelease = localPath ? { ...release, coverUrl: localPath } : release;
-        noteContent = replaceVariables(templateContent, newRelease, userTags);
+        noteContent = replaceVariables(templateContent, newRelease, userTags, this.settings.wikiLinkArtist);
       }
     }
 

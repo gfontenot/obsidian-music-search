@@ -229,6 +229,21 @@ describe('replaceVariables', () => {
     const result = replaceVariables('{{artistMbid}} {{releaseGroupMbid}}', makeRelease());
     expect(result).toBe('artist-abc rg-abc123');
   });
+
+  describe('wikiLinkArtist', () => {
+    it('renders artist as plain text by default', () => {
+      expect(replaceVariables('{{artist}}', makeRelease())).toBe('Radiohead');
+    });
+
+    it('wraps artist in wiki-link brackets when enabled', () => {
+      expect(replaceVariables('{{artist}}', makeRelease(), [], true)).toBe('"[[Radiohead]]"');
+    });
+
+    it('quotes wiki-link when artist name contains YAML-special chars', () => {
+      const release = makeRelease({ artist: 'AC/DC' });
+      expect(replaceVariables('{{artist}}', release, [], true)).toBe('"[[AC/DC]]"');
+    });
+  });
 });
 
 describe('makeFileName', () => {

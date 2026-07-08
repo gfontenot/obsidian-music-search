@@ -27,6 +27,7 @@ export interface MusicSearchSettings {
   openNewNote: boolean;
   showCoverInSearch: boolean;
   editionSelection: boolean;
+  wikiLinkArtist: boolean;
   tags: string;
 }
 
@@ -40,6 +41,7 @@ export const DEFAULT_SETTINGS: MusicSearchSettings = {
   openNewNote: true,
   showCoverInSearch: true,
   editionSelection: true,
+  wikiLinkArtist: false,
   tags: '',
 };
 
@@ -257,6 +259,17 @@ export class MusicSearchSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.editionSelection)
         .onChange(async (value) => {
           this.plugin.settings.editionSelection = value;
+          await this.plugin.saveSettings();
+        }));
+
+    // Wiki-link artist
+    new Setting(containerEl)
+      .setName('Link artist name')
+      .setDesc('Wrap the artist name in [[...]] to create an Obsidian wiki-link in the generated note.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.wikiLinkArtist)
+        .onChange(async (value) => {
+          this.plugin.settings.wikiLinkArtist = value;
           await this.plugin.saveSettings();
         }));
 

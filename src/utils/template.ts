@@ -32,7 +32,7 @@ function toYamlScalar(value: string): string {
   return '"' + value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '') + '"';
 }
 
-export function replaceVariables(template: string, release: Release, userTags: string[] = []): string {
+export function replaceVariables(template: string, release: Release, userTags: string[] = [], wikiLinkArtist = false): string {
 
   // Build tracklist string
   const trackList = release.tracks.length > 0
@@ -66,7 +66,7 @@ export function replaceVariables(template: string, release: Release, userTags: s
     trackCount: String(release.trackCount),
     // Scalar values — escaped so they're safe in YAML frontmatter
     title: toYamlScalar(release.title),
-    artist: toYamlScalar(release.artist),
+    artist: wikiLinkArtist ? toYamlScalar(`[[${release.artist}]]`) : toYamlScalar(release.artist),
     artistMbid: toYamlScalar(release.artistMbid),
     date: toYamlScalar(release.date),
     year: toYamlScalar(release.year),
